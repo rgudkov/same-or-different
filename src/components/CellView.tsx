@@ -27,12 +27,33 @@ function ShapeSvg({ cell }: { cell: Cell }) {
   }
 }
 
-export function CellView({ cell }: { cell: Cell }) {
+// A single board cell. Tapping toggles selection (handled by the parent);
+// `selected` drives the highlight. `position` is the 1-based reading-order
+// number used for accessibility labels.
+export function CellView({
+  cell,
+  position,
+  selected,
+  onSelect,
+}: {
+  cell: Cell;
+  position: number;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   return (
-    <div className="cell" style={{ background: BACKGROUND_HEX[cell.background] }}>
+    <button
+      type="button"
+      className={selected ? "cell cell--selected" : "cell"}
+      style={{ background: BACKGROUND_HEX[cell.background] }}
+      role="gridcell"
+      aria-pressed={selected}
+      aria-label={`Cell ${position}`}
+      onClick={onSelect}
+    >
       <svg viewBox="0 0 100 100" className="cell-shape" aria-hidden="true">
         <ShapeSvg cell={cell} />
       </svg>
-    </div>
+    </button>
   );
 }

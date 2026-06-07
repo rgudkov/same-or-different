@@ -44,17 +44,70 @@ body {
   aspect-ratio: 1 / 1;
 }
 
+/* Cells are buttons: reset native styling, keep them square and tappable. */
 .cell {
   display: flex;
   align-items: center;
   justify-content: center;
   aspect-ratio: 1 / 1;
+  padding: 0;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   overflow: hidden;
+  cursor: pointer;
+  /* Reserve space for the selected ring so layout doesn't shift on select. */
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 120ms ease;
+}
+
+.cell--selected {
+  outline-color: #4cc9f0;
 }
 
 .cell-shape {
   width: 72%;
   height: 72%;
+  pointer-events: none;
+}
+
+.stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 1.1rem;
+}
+
+.found {
+  width: min(92vw, 480px);
+  text-align: center;
+}
+
+.found-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.found-empty {
+  margin: 0;
+  opacity: 0.5;
+}
+
+.found-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.found-item {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(76, 201, 240, 0.18);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
 }
