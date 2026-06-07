@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -6,4 +7,9 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   base: "/mini-games/",
   plugins: [react()],
+  test: {
+    // Component tests render into a DOM; pure logic/reducer tests run here too.
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+  },
 });
