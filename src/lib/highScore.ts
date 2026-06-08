@@ -2,7 +2,7 @@
 // between sessions. All access is wrapped so a disabled/unavailable storage
 // (private mode, quota errors) degrades to "no high score" rather than crashing.
 
-const STORAGE_KEY = "set3x3.highScore";
+const STORAGE_KEY = "sod.highScore";
 
 // Returns the stored high score, or 0 when absent or unreadable.
 export function loadHighScore(): number {

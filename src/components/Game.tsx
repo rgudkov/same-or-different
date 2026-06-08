@@ -138,23 +138,23 @@ export function Game({
         <span className="timer" aria-label="Time left">
           {formatTime(secondsLeft)}
         </span>
-        <span className="topbar-right">
+        <span className="score-block">
+          <strong className="score" aria-label="Score">
+            {state.score}
+          </strong>
           <span className="best-inline" aria-label="Best score">
             Best {highScore}
           </span>
-          <span className="stat">
-            Score: <strong aria-label="Score">{state.score}</strong>
-          </span>
-          <button
-            type="button"
-            className="btn btn--icon"
-            aria-label={muted ? "Unmute sounds" : "Mute sounds"}
-            aria-pressed={muted}
-            onClick={toggleMuted}
-          >
-            {muted ? "🔇" : "🔊"}
-          </button>
         </span>
+        <button
+          type="button"
+          className="btn btn--icon topbar-mute"
+          aria-label={muted ? "Unmute sounds" : "Mute sounds"}
+          aria-pressed={muted}
+          onClick={toggleMuted}
+        >
+          {muted ? "🔇" : "🔊"}
+        </button>
       </div>
 
       <div className="game-body">
