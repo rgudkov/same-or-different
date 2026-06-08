@@ -85,6 +85,44 @@ describe("scoring", () => {
   });
 });
 
+// A second, clearly different board to load on a correct Complete.
+function nextFixtureBoard(): Board {
+  const cells = [
+    cell("white", "circle", "blue"),
+    cell("white", "triangle", "blue"),
+    cell("white", "square", "blue"),
+    cell("grey", "circle", "red"),
+  ];
+  return { cells, sets: findAllSets(cells) };
+}
+
+describe("complete", () => {
+  it("awards +3 and loads the next board when every set is found", () => {
+    // The fixture has exactly one set (0,1,2); find it, then declare complete.
+    let state = tapAll([0, 1, 2]);
+    const next = nextFixtureBoard();
+    state = gameReducer(state, { type: "complete", nextBoard: next });
+
+    expect(state.score).toBe(4); // +1 for the set, +3 for the complete
+    expect(state.board).toBe(next);
+    expect(state.found).toEqual([]);
+    expect(state.selected).toEqual([]);
+    expect(state.lastOutcome).toBe("complete-correct");
+  });
+
+  it("subtracts 1 and keeps the board when unfound sets remain", () => {
+    const before = initGameState(fixtureBoard());
+    const state = gameReducer(before, {
+      type: "complete",
+      nextBoard: nextFixtureBoard(),
+    });
+
+    expect(state.score).toBe(-1);
+    expect(state.board).toBe(before.board);
+    expect(state.lastOutcome).toBe("complete-wrong");
+  });
+});
+
 describe("newBoard", () => {
   it("resets selection, found list, and feedback but keeps score", () => {
     let state = tapAll([0, 1, 2]);

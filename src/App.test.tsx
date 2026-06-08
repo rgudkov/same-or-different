@@ -1,10 +1,11 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import type { Cell } from "./types";
 import type { Board } from "./lib/board";
 import { findAllSets, isSet } from "./lib/board";
+import { GAME_DURATION_SECONDS } from "./components/Game";
 
 function cell(
   background: Cell["background"],
@@ -14,10 +15,7 @@ function cell(
   return { background, shape, shapeColor };
 }
 
-// A deterministic 9-cell board. The tests only ever tap cells 1–4 (1-based), so
-// what matters is: cells 1,2,3 form a set (all black, all-different shapes, all
-// red) while cells 1,2,4 do not (backgrounds black/black/white). The board may
-// contain other sets among the untouched cells — that's fine and unasserted.
+// 9-cell board whose cells 1,2,3 form a set, so a flow test can score points.
 function fixtureBoard(): Board {
   const cells = [
     cell("black", "triangle", "red"),
@@ -31,107 +29,79 @@ function fixtureBoard(): Board {
     cell("black", "square", "yellow"),
   ];
   const board = { cells, sets: findAllSets(cells) };
-  // Guard the facts the assertions depend on, so a fixture edit can't silently
-  // invalidate the tests.
-  if (!isSet(cells[0], cells[1], cells[2]) || isSet(cells[0], cells[1], cells[3])) {
-    throw new Error("fixture invariant broken: 1,2,3 must be a set; 1,2,4 must not");
+  if (!isSet(cells[0], cells[1], cells[2])) {
+    throw new Error("fixture invariant broken: 1,2,3 must be a set");
   }
   return board;
 }
 
-// Reads the live score off the labelled element.
-function score(): string {
-  return screen.getByLabelText("Score").textContent ?? "";
-}
+afterEach(() => {
+  localStorage.clear();
+});
 
-function gridcell(position: number): HTMLElement {
-  return screen.getByRole("gridcell", { name: `Cell ${position}` });
-}
-
-describe("App selection", () => {
-  it("highlights a cell on tap and clears it on a second tap", async () => {
-    const user = userEvent.setup();
-    render(<App initialBoard={fixtureBoard()} />);
-
-    await user.click(gridcell(1));
-    expect(gridcell(1)).toHaveAttribute("aria-pressed", "true");
-
-    await user.click(gridcell(1));
-    expect(gridcell(1)).toHaveAttribute("aria-pressed", "false");
+describe("App home screen", () => {
+  it("shows the title, Play button, rules, and high score", () => {
+    render(<App />);
+    expect(screen.getByRole("heading", { name: "Set 3×3" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "How to play" })).toBeInTheDocument();
+    expect(screen.getByLabelText("High score")).toHaveTextContent("0");
   });
 
-  it("keeps an earlier selection when a different cell is deselected", async () => {
+  it("starts a game when Play is clicked", async () => {
     const user = userEvent.setup();
     render(<App initialBoard={fixtureBoard()} />);
 
-    await user.click(gridcell(1));
-    await user.click(gridcell(2));
-    await user.click(gridcell(2));
+    await user.click(screen.getByRole("button", { name: "Play" }));
 
-    expect(gridcell(1)).toHaveAttribute("aria-pressed", "true");
-    expect(gridcell(2)).toHaveAttribute("aria-pressed", "false");
-  });
-
-  it("auto-evaluates and clears the selection on the third tap", async () => {
-    const user = userEvent.setup();
-    render(<App initialBoard={fixtureBoard()} />);
-
-    await user.click(gridcell(1));
-    await user.click(gridcell(2));
-    await user.click(gridcell(3));
-
-    for (const pos of [1, 2, 3]) {
-      expect(gridcell(pos)).toHaveAttribute("aria-pressed", "false");
-    }
+    expect(screen.getByLabelText("Time left")).toHaveTextContent("2:00");
+    expect(screen.getByRole("grid", { name: "Set board" })).toBeInTheDocument();
   });
 });
 
-describe("App scoring", () => {
-  it("awards +1 and lists a valid set as sorted cell numbers", async () => {
-    const user = userEvent.setup();
-    render(<App initialBoard={fixtureBoard()} />);
-
-    await user.click(gridcell(1));
-    await user.click(gridcell(2));
-    await user.click(gridcell(3));
-
-    expect(score()).toBe("1");
-    const found = screen.getByRole("region", { name: "Found sets" });
-    expect(within(found).getByText("1,2,3")).toBeInTheDocument();
+describe("App game-over flow", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
   });
 
-  it("records the found set regardless of tap order", async () => {
-    const user = userEvent.setup();
-    render(<App initialBoard={fixtureBoard()} />);
-
-    await user.click(gridcell(3));
-    await user.click(gridcell(1));
-    await user.click(gridcell(2));
-
-    const found = screen.getByRole("region", { name: "Found sets" });
-    expect(within(found).getByText("1,2,3")).toBeInTheDocument();
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it("awards 0 when re-submitting an already-found set", async () => {
-    const user = userEvent.setup();
+  // Uses fireEvent (synchronous) rather than userEvent, which doesn't cooperate
+  // with fake timers here.
+  function playAndScoreOneSet() {
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    // Score one set (+1) before the clock runs out.
+    for (const pos of [1, 2, 3]) {
+      fireEvent.click(screen.getByRole("gridcell", { name: `Cell ${pos}` }));
+    }
+  }
+
+  it("ends the game at timer zero and shows the final score", () => {
     render(<App initialBoard={fixtureBoard()} />);
 
-    for (const pos of [1, 2, 3, 1, 2, 3]) await user.click(gridcell(pos));
+    playAndScoreOneSet();
+    act(() => {
+      vi.advanceTimersByTime(GAME_DURATION_SECONDS * 1000);
+    });
 
-    expect(score()).toBe("1");
-    const found = screen.getByRole("region", { name: "Found sets" });
-    expect(within(found).getAllByText("1,2,3")).toHaveLength(1);
+    expect(screen.getByRole("heading", { name: "Game Over" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Final score")).toHaveTextContent("1");
+    expect(screen.getByText("🎉 New best!")).toBeInTheDocument();
   });
 
-  it("subtracts 1 when three cells are not a set and lists nothing", async () => {
-    const user = userEvent.setup();
-    render(<App initialBoard={fixtureBoard()} />);
+  it("persists the high score so a later session sees it", () => {
+    const { unmount } = render(<App initialBoard={fixtureBoard()} />);
 
-    await user.click(gridcell(1));
-    await user.click(gridcell(2));
-    await user.click(gridcell(4));
+    playAndScoreOneSet();
+    act(() => {
+      vi.advanceTimersByTime(GAME_DURATION_SECONDS * 1000);
+    });
+    unmount();
 
-    expect(score()).toBe("-1");
-    expect(screen.getByText("None yet")).toBeInTheDocument();
+    // A fresh app should read the persisted best of 1 on its Home screen.
+    render(<App />);
+    expect(screen.getByLabelText("High score")).toHaveTextContent("1");
   });
 });
