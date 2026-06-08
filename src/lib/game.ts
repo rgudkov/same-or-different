@@ -1,12 +1,18 @@
-// Pure game-state reducer for selection and set scoring (Phase 3). Kept free of
-// React so each scoring outcome can be unit-tested directly. The timer, the
-// Complete action, and board progression arrive in later phases.
+// Pure game-state reducer for selection, set scoring, and board completion.
+// Kept free of React so each outcome can be unit-tested directly. The timer and
+// the surrounding session (screens, high score) live in components.
 
 import type { Board } from "./board";
 import { isSet } from "./board";
 
-// The outcome of evaluating a three-cell selection, surfaced for feedback.
-export type Outcome = "set" | "already-found" | "not-set";
+// The outcome of the most recent action, surfaced for feedback. The first three
+// come from evaluating a three-cell selection; the last two from Complete.
+export type Outcome =
+  | "set"
+  | "already-found"
+  | "not-set"
+  | "complete-correct"
+  | "complete-wrong";
 
 export type GameState = {
   board: Board;
@@ -18,14 +24,21 @@ export type GameState = {
   score: number;
   // Result of the most recent evaluation, or null before any/after deselect.
   lastOutcome: Outcome | null;
+  // Monotonic counter bumped on every outcome-producing action (an evaluation or
+  // a Complete). Lets the UI retrigger feedback even when two actions in a row
+  // share the same `lastOutcome` (e.g. two wrong Completes).
+  feedbackId: number;
 };
 
 export type Action =
   | { type: "toggle"; index: number }
+  // `nextBoard` is the board to load if the Complete is correct; ignored when
+  // unfound sets remain. The caller generates it so the reducer stays pure.
+  | { type: "complete"; nextBoard: Board }
   | { type: "newBoard"; board: Board };
 
 export function initGameState(board: Board): GameState {
-  return { board, selected: [], found: [], score: 0, lastOutcome: null };
+  return { board, selected: [], found: [], score: 0, lastOutcome: null, feedbackId: 0 };
 }
 
 export function gameReducer(state: GameState, action: Action): GameState {
@@ -41,7 +54,36 @@ export function gameReducer(state: GameState, action: Action): GameState {
 
     case "toggle":
       return toggle(state, action.index);
+
+    case "complete":
+      return complete(state, action.nextBoard);
   }
+}
+
+// Handles a Complete declaration. The board is fully solved exactly when every
+// authoritative set has been found, so a length match is sufficient (each found
+// entry is a distinct set from that list). Correct: +3 and advance to the next
+// board with a clean slate. Wrong (unfound sets remain): −1 and continue, leaving
+// any in-progress selection untouched.
+function complete(state: GameState, nextBoard: Board): GameState {
+  if (state.found.length === state.board.sets.length) {
+    return {
+      ...state,
+      board: nextBoard,
+      selected: [],
+      found: [],
+      score: state.score + 3,
+      lastOutcome: "complete-correct",
+      feedbackId: state.feedbackId + 1,
+    };
+  }
+
+  return {
+    ...state,
+    score: state.score - 1,
+    lastOutcome: "complete-wrong",
+    feedbackId: state.feedbackId + 1,
+  };
 }
 
 function toggle(state: GameState, index: number): GameState {
@@ -71,24 +113,26 @@ function toggle(state: GameState, index: number): GameState {
 function evaluate(
   state: GameState,
   selection: number[],
-): Pick<GameState, "score" | "found" | "lastOutcome"> {
+): Pick<GameState, "score" | "found" | "lastOutcome" | "feedbackId"> {
   const [i, j, k] = selection;
   const { cells } = state.board;
+  const feedbackId = state.feedbackId + 1;
 
   if (!isSet(cells[i], cells[j], cells[k])) {
-    return { score: state.score - 1, found: state.found, lastOutcome: "not-set" };
+    return { score: state.score - 1, found: state.found, lastOutcome: "not-set", feedbackId };
   }
 
   const triple = [...selection].sort((a, b) => a - b);
   if (state.found.some((f) => sameTriple(f, triple))) {
     // Re-finding a known set is neutral: no points, no new entry.
-    return { score: state.score, found: state.found, lastOutcome: "already-found" };
+    return { score: state.score, found: state.found, lastOutcome: "already-found", feedbackId };
   }
 
   return {
     score: state.score + 1,
     found: [...state.found, triple],
     lastOutcome: "set",
+    feedbackId,
   };
 }
 

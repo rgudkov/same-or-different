@@ -1,52 +1,63 @@
-import { useReducer } from "react";
-import { Board } from "./components/Board";
+import { useState } from "react";
+import { Game } from "./components/Game";
+import { GameOver } from "./components/GameOver";
+import { Home } from "./components/Home";
 import type { Board as BoardModel } from "./lib/board";
-import { generateBoard } from "./lib/board";
-import { gameReducer, initGameState } from "./lib/game";
+import { loadHighScore, saveHighScore } from "./lib/highScore";
 
-// Formats a found set (0-based index triple) as sorted 1-based cell numbers,
-// e.g. [0, 4, 8] → "1,5,9".
-function formatFoundSet(triple: number[]): string {
-  return triple.map((i) => i + 1).join(",");
-}
+type Screen = "home" | "playing" | "over";
 
-// `initialBoard` lets tests inject a deterministic board; in normal use a fresh
-// random board is generated once on load.
+// Top-level session orchestrator: owns which screen is shown and the persisted
+// high score, while `Game` owns in-board play and the timer. `initialBoard` lets
+// tests drive a deterministic board into the playing screen.
 export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}) {
-  const [state, dispatch] = useReducer(gameReducer, undefined, () =>
-    initGameState(initialBoard ?? generateBoard()),
-  );
+  const [screen, setScreen] = useState<Screen>("home");
+  const [highScore, setHighScore] = useState(() => loadHighScore());
+  const [finalScore, setFinalScore] = useState(0);
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
+  // Incremented each time a game starts so `Game` remounts fresh (new board,
+  // reset timer) even when consecutive games end on the same score.
+  const [sessionId, setSessionId] = useState(0);
 
-  return (
-    <main className="app">
-      <h1 className="title">Set 3×3</h1>
+  function startGame() {
+    setSessionId((id) => id + 1);
+    setScreen("playing");
+  }
 
-      <div className="stats">
-        <span className="stat">
-          Score: <strong aria-label="Score">{state.score}</strong>
-        </span>
-      </div>
+  function handleGameOver(score: number) {
+    const beaten = score > highScore;
+    if (beaten) {
+      setHighScore(score);
+      saveHighScore(score);
+    }
+    setFinalScore(score);
+    setIsNewHighScore(beaten);
+    setScreen("over");
+  }
 
-      <Board
-        cells={state.board.cells}
-        selected={state.selected}
-        onSelect={(index) => dispatch({ type: "toggle", index })}
-      />
+  switch (screen) {
+    case "home":
+      return <Home onPlay={startGame} />;
 
-      <section className="found" aria-label="Found sets">
-        <h2 className="found-title">Found sets</h2>
-        {state.found.length === 0 ? (
-          <p className="found-empty">None yet</p>
-        ) : (
-          <ul className="found-list">
-            {state.found.map((triple) => (
-              <li key={formatFoundSet(triple)} className="found-item">
-                {formatFoundSet(triple)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </main>
-  );
+    case "playing":
+      return (
+        <Game
+          key={sessionId}
+          initialBoard={initialBoard}
+          highScore={highScore}
+          onGameOver={handleGameOver}
+        />
+      );
+
+    case "over":
+      return (
+        <GameOver
+          score={finalScore}
+          highScore={highScore}
+          isNewHighScore={isNewHighScore}
+          onPlayAgain={startGame}
+          onHome={() => setScreen("home")}
+        />
+      );
+  }
 }

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Cell } from "../types";
-import { allCells, BOARD_SIZE, findAllSets, generateBoard, isSet } from "./board";
+import {
+  allCells,
+  BOARD_SIZE,
+  findAllSets,
+  generateBoard,
+  isSet,
+  MIN_SETS,
+} from "./board";
 
 // Shorthand cell constructor for readable test fixtures.
 function cell(
@@ -116,6 +123,15 @@ describe("generateBoard", () => {
   it("computes a set list consistent with findAllSets", () => {
     const board = generateBoard();
     expect(board.sets).toEqual(findAllSets(board.cells));
+  });
+
+  it("always contains at least MIN_SETS sets across many draws", () => {
+    // Rejection sampling should make zero-/one-set boards impossible. Run enough
+    // iterations that a missing guarantee would almost certainly surface.
+    for (let i = 0; i < 200; i++) {
+      const board = generateBoard();
+      expect(board.sets.length).toBeGreaterThanOrEqual(MIN_SETS);
+    }
   });
 
   it("is deterministic for a fixed random source", () => {

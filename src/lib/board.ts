@@ -16,6 +16,14 @@ export type Board = {
 
 export const BOARD_SIZE = 9;
 
+// Every board must offer at least this many sets so a fresh board is always
+// solvable and "Complete" is a real decision (no zero-set boards).
+export const MIN_SETS = 2;
+
+// Safety cap on rejection sampling so a degenerate random source can't loop
+// forever; in practice a random 9 cells clears MIN_SETS almost immediately.
+const MAX_GENERATION_ATTEMPTS = 100;
+
 // True when, for each attribute independently, the three values are either all
 // the same or all different.
 export function isSet(a: Cell, b: Cell, c: Cell): boolean {
@@ -62,11 +70,24 @@ export function allCells(): Cell[] {
   return cells;
 }
 
-// Generates a board of 9 distinct random cells and computes its set list. The
+// Generates a board of 9 distinct random cells guaranteed to contain at least
+// `MIN_SETS` sets, with its set list always recomputed so scoring is exact. The
 // optional `random` source (defaulting to Math.random) makes generation
-// deterministic in tests. Phase 4 will add a bias guaranteeing ≥2 sets per
-// board; for now any random 9 distinct cells is acceptable.
+// deterministic in tests. Uses rejection sampling: draw a random board, keep it
+// if it clears MIN_SETS, otherwise redraw. The attempt cap guards against a
+// degenerate random source that can't reach the threshold (it then returns the
+// last draw, which is still 9 distinct cells).
 export function generateBoard(random: () => number = Math.random): Board {
+  let board: Board = drawBoard(random);
+  for (let attempt = 1; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
+    if (board.sets.length >= MIN_SETS) return board;
+    board = drawBoard(random);
+  }
+  return board;
+}
+
+// Draws one random board of 9 distinct cells and computes its set list.
+function drawBoard(random: () => number): Board {
   const pool = allCells();
   shuffle(pool, random);
   const cells = pool.slice(0, BOARD_SIZE);

@@ -71,10 +71,233 @@ body {
   pointer-events: none;
 }
 
-.stats {
+/* Game top bar: timer on the left, live score on the right. */
+.topbar {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(92vw, 480px);
+  font-size: 1.2rem;
+}
+
+.timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: baseline;
   gap: 1rem;
+}
+
+/* Best score: present but quiet — informative, never competing with the live
+   score. */
+.best-inline {
+  font-size: 0.9rem;
+  font-weight: 400;
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Wrapper that fades each fresh board in for a smooth transition. */
+.board-wrap {
+  width: min(92vw, 480px);
+  animation: board-fade-in 240ms ease;
+}
+
+@keyframes board-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-wrap {
+    animation: none;
+  }
+}
+
+/* Buttons: shared base plus primary and Complete variants. */
+.btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.btn--primary {
+  background: #4cc9f0;
+  color: #0b1020;
+  border-color: transparent;
+}
+
+.btn--primary:hover {
+  background: #6fd6f5;
+}
+
+/* Complete is the big thumb-reachable action during play. */
+.complete {
+  width: min(92vw, 480px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn--complete {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.15rem;
+}
+
+.complete-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.6;
+  text-align: center;
+}
+
+/* Wrong Complete: a red flash plus a quick shake so the rejection registers at
+   the button, not just in the score. */
+.btn--reject {
+  animation: btn-reject 420ms ease;
+}
+
+@keyframes btn-reject {
+  0% {
+    background: #e63946;
+    border-color: #e63946;
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    background: #e63946;
+    border-color: #e63946;
+    transform: translateX(0);
+  }
+}
+
+/* Non-blocking feedback banner pinned near the top of the viewport. */
+.toast {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #0b1020;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  animation: toast-pop 1500ms ease forwards;
+}
+
+.toast--set,
+.toast--complete-correct {
+  background: #2ec27e;
+}
+
+.toast--not-set,
+.toast--complete-wrong {
+  background: #e63946;
+  color: #fff;
+}
+
+.toast--already-found {
+  background: #f4c20d;
+}
+
+@keyframes toast-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.95);
+  }
+  12% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn--reject {
+    animation: none;
+    background: #e63946;
+  }
+
+  .toast {
+    animation: none;
+  }
+}
+
+/* Home / Game Over content. */
+.how-to {
+  width: min(92vw, 480px);
+  line-height: 1.5;
+}
+
+.how-to-title {
+  margin: 0 0 0.5rem;
   font-size: 1.1rem;
+}
+
+.scoring {
+  margin: 0.75rem 0 0;
+  padding-left: 1.2rem;
+  opacity: 0.85;
+}
+
+.high-score,
+.final-score {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.celebrate {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffd166;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
 }
 
 .found {
