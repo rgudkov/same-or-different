@@ -137,10 +137,117 @@ body {
 }
 
 /* Complete is the big thumb-reachable action during play. */
-.btn--complete {
+.complete {
   width: min(92vw, 480px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn--complete {
+  width: 100%;
   padding: 1rem;
   font-size: 1.15rem;
+}
+
+.complete-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.6;
+  text-align: center;
+}
+
+/* Wrong Complete: a red flash plus a quick shake so the rejection registers at
+   the button, not just in the score. */
+.btn--reject {
+  animation: btn-reject 420ms ease;
+}
+
+@keyframes btn-reject {
+  0% {
+    background: #e63946;
+    border-color: #e63946;
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    background: #e63946;
+    border-color: #e63946;
+    transform: translateX(0);
+  }
+}
+
+/* Non-blocking feedback banner pinned near the top of the viewport. */
+.toast {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #0b1020;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  animation: toast-pop 1500ms ease forwards;
+}
+
+.toast--set,
+.toast--complete-correct {
+  background: #2ec27e;
+}
+
+.toast--not-set,
+.toast--complete-wrong {
+  background: #e63946;
+  color: #fff;
+}
+
+.toast--already-found {
+  background: #f4c20d;
+}
+
+@keyframes toast-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.95);
+  }
+  12% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn--reject {
+    animation: none;
+    background: #e63946;
+  }
+
+  .toast {
+    animation: none;
+  }
 }
 
 /* Home / Game Over content. */

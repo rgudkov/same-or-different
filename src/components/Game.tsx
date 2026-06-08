@@ -2,10 +2,24 @@ import { useEffect, useReducer, useState } from "react";
 import { Board } from "./Board";
 import type { Board as BoardModel } from "../lib/board";
 import { generateBoard } from "../lib/board";
+import type { Outcome } from "../lib/game";
 import { gameReducer, initGameState } from "../lib/game";
 
 // One continuous countdown spans the whole game (all boards). Two minutes.
 export const GAME_DURATION_SECONDS = 120;
+
+// Short, non-blocking message shown for each outcome. Score deltas are spelled
+// out so the feedback explains the point change, not just flashes a color.
+const TOAST_TEXT: Record<Outcome, string> = {
+  set: "Set! +1",
+  "already-found": "Already found",
+  "not-set": "Not a set −1",
+  "complete-correct": "Board cleared! +3",
+  "complete-wrong": "Sets still remain −1",
+};
+
+// How long a toast stays on screen before fading out.
+const TOAST_DURATION_MS = 1500;
 
 // Formats a found set (0-based index triple) as sorted 1-based cell numbers,
 // e.g. [0, 4, 8] → "1,5,9".
@@ -37,6 +51,9 @@ export function Game({
   // Bumped whenever the board changes so the grid replays its fade-in, giving a
   // smooth transition into each fresh board after a correct Complete.
   const [boardTransition, setBoardTransition] = useState(0);
+  // The current toast (with its feedbackId so the element re-keys and replays
+  // its animation on every action), or null when nothing is showing.
+  const [toast, setToast] = useState<{ id: number; outcome: Outcome } | null>(null);
 
   // One interval drives the countdown for the whole game; it stops itself at 0.
   useEffect(() => {
@@ -57,8 +74,28 @@ export function Game({
     setBoardTransition((n) => n + 1);
   }, [state.board]);
 
+  // Show a toast for each outcome-producing action and auto-dismiss it. Keyed on
+  // feedbackId so repeated identical outcomes still refire.
+  useEffect(() => {
+    if (!state.lastOutcome) return;
+    setToast({ id: state.feedbackId, outcome: state.lastOutcome });
+    const timeout = setTimeout(() => setToast(null), TOAST_DURATION_MS);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.feedbackId]);
+
   return (
     <main className="app">
+      {toast && (
+        <div
+          key={toast.id}
+          className={`toast toast--${toast.outcome}`}
+          role="status"
+        >
+          {TOAST_TEXT[toast.outcome]}
+        </div>
+      )}
+
       <div className="topbar">
         <span className="timer" aria-label="Time left">
           {formatTime(secondsLeft)}
@@ -76,13 +113,24 @@ export function Game({
         />
       </div>
 
-      <button
-        type="button"
-        className="btn btn--complete"
-        onClick={() => dispatch({ type: "complete", nextBoard: generateBoard() })}
-      >
-        Complete
-      </button>
+      <div className="complete">
+        <button
+          type="button"
+          // Re-keyed on a wrong Complete so the shake/flash animation replays
+          // every time, even on consecutive wrong taps.
+          key={state.lastOutcome === "complete-wrong" ? state.feedbackId : "complete"}
+          className={
+            "btn btn--complete" +
+            (state.lastOutcome === "complete-wrong" ? " btn--reject" : "")
+          }
+          onClick={() => dispatch({ type: "complete", nextBoard: generateBoard() })}
+        >
+          🚩 No more sets
+        </button>
+        <p className="complete-hint">
+          Tap when you&apos;ve found every set (or there are none)
+        </p>
+      </div>
 
       <section className="found" aria-label="Found sets">
         <h2 className="found-title">Found sets</h2>

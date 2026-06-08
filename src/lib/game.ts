@@ -24,6 +24,10 @@ export type GameState = {
   score: number;
   // Result of the most recent evaluation, or null before any/after deselect.
   lastOutcome: Outcome | null;
+  // Monotonic counter bumped on every outcome-producing action (an evaluation or
+  // a Complete). Lets the UI retrigger feedback even when two actions in a row
+  // share the same `lastOutcome` (e.g. two wrong Completes).
+  feedbackId: number;
 };
 
 export type Action =
@@ -34,7 +38,7 @@ export type Action =
   | { type: "newBoard"; board: Board };
 
 export function initGameState(board: Board): GameState {
-  return { board, selected: [], found: [], score: 0, lastOutcome: null };
+  return { board, selected: [], found: [], score: 0, lastOutcome: null, feedbackId: 0 };
 }
 
 export function gameReducer(state: GameState, action: Action): GameState {
@@ -70,10 +74,16 @@ function complete(state: GameState, nextBoard: Board): GameState {
       found: [],
       score: state.score + 3,
       lastOutcome: "complete-correct",
+      feedbackId: state.feedbackId + 1,
     };
   }
 
-  return { ...state, score: state.score - 1, lastOutcome: "complete-wrong" };
+  return {
+    ...state,
+    score: state.score - 1,
+    lastOutcome: "complete-wrong",
+    feedbackId: state.feedbackId + 1,
+  };
 }
 
 function toggle(state: GameState, index: number): GameState {
@@ -103,24 +113,26 @@ function toggle(state: GameState, index: number): GameState {
 function evaluate(
   state: GameState,
   selection: number[],
-): Pick<GameState, "score" | "found" | "lastOutcome"> {
+): Pick<GameState, "score" | "found" | "lastOutcome" | "feedbackId"> {
   const [i, j, k] = selection;
   const { cells } = state.board;
+  const feedbackId = state.feedbackId + 1;
 
   if (!isSet(cells[i], cells[j], cells[k])) {
-    return { score: state.score - 1, found: state.found, lastOutcome: "not-set" };
+    return { score: state.score - 1, found: state.found, lastOutcome: "not-set", feedbackId };
   }
 
   const triple = [...selection].sort((a, b) => a - b);
   if (state.found.some((f) => sameTriple(f, triple))) {
     // Re-finding a known set is neutral: no points, no new entry.
-    return { score: state.score, found: state.found, lastOutcome: "already-found" };
+    return { score: state.score, found: state.found, lastOutcome: "already-found", feedbackId };
   }
 
   return {
     score: state.score + 1,
     found: [...state.found, triple],
     lastOutcome: "set",
+    feedbackId,
   };
 }
 

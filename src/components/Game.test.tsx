@@ -116,10 +116,12 @@ describe("Game complete", () => {
     const user = userEvent.setup();
     render(<Game initialBoard={fixtureBoard()} onGameOver={noop} />);
 
-    await user.click(screen.getByRole("button", { name: "Complete" }));
+    await user.click(screen.getByRole("button", { name: /no more sets/i }));
 
     expect(score()).toBe("-1");
     expect(screen.getByText("None yet")).toBeInTheDocument();
+    // A visible toast explains the rejection, not just the score change.
+    expect(screen.getByText("Sets still remain −1")).toBeInTheDocument();
   });
 
   it("awards +3 and loads a fresh board once every set is found", async () => {
@@ -131,7 +133,7 @@ describe("Game complete", () => {
     for (const triple of board.sets) {
       for (const index of triple) await user.click(gridcell(index + 1));
     }
-    await user.click(screen.getByRole("button", { name: "Complete" }));
+    await user.click(screen.getByRole("button", { name: /no more sets/i }));
 
     // +1 per set found, +3 for the correct Complete; found list resets.
     expect(score()).toBe(String(board.sets.length + 3));
