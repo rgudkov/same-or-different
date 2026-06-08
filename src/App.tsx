@@ -1,17 +1,22 @@
 import { useState } from "react";
 import { Game } from "./components/Game";
 import { GameOver } from "./components/GameOver";
-import { Home } from "./components/Home";
+import { Intro } from "./components/Intro";
 import type { Board as BoardModel } from "./lib/board";
 import { loadHighScore, saveHighScore } from "./lib/highScore";
+import { loadIntroSeen, saveIntroSeen } from "./lib/introSeen";
 
-type Screen = "home" | "playing" | "over";
+type Screen = "intro" | "playing" | "over";
 
 // Top-level session orchestrator: owns which screen is shown and the persisted
-// high score, while `Game` owns in-board play and the timer. `initialBoard` lets
-// tests drive a deterministic board into the playing screen.
+// high score, while `Game` owns in-board play and the timer. On launch a player
+// who has already seen the intro drops straight into a fresh game; a first-timer
+// sees the intro. `initialBoard` lets tests drive a deterministic board into the
+// playing screen.
 export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}) {
-  const [screen, setScreen] = useState<Screen>("home");
+  const [screen, setScreen] = useState<Screen>(() =>
+    loadIntroSeen() ? "playing" : "intro",
+  );
   const [highScore, setHighScore] = useState(() => loadHighScore());
   const [finalScore, setFinalScore] = useState(0);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
@@ -22,6 +27,13 @@ export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}
   function startGame() {
     setSessionId((id) => id + 1);
     setScreen("playing");
+  }
+
+  // First-run intro completion: remember the intro was seen (so future launches
+  // skip it), then drop into a fresh game.
+  function finishIntro() {
+    saveIntroSeen(true);
+    startGame();
   }
 
   function handleGameOver(score: number) {
@@ -36,8 +48,8 @@ export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}
   }
 
   switch (screen) {
-    case "home":
-      return <Home onPlay={startGame} />;
+    case "intro":
+      return <Intro onComplete={finishIntro} />;
 
     case "playing":
       return (
@@ -56,7 +68,6 @@ export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}
           highScore={highScore}
           isNewHighScore={isNewHighScore}
           onPlayAgain={startGame}
-          onHome={() => setScreen("home")}
         />
       );
   }

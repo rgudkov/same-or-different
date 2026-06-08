@@ -1,17 +1,17 @@
 // The end-of-game screen: final cumulative score, a celebration when the high
-// score was beaten, and actions to replay or return home.
+// score was beaten, and a one-tap replay into a fresh game. There is no Home
+// button — returning players never see a home screen, so Play Again is the only
+// route onward.
 export function GameOver({
   score,
   highScore,
   isNewHighScore,
   onPlayAgain,
-  onHome,
 }: {
   score: number;
   highScore: number;
   isNewHighScore: boolean;
   onPlayAgain: () => void;
-  onHome: () => void;
 }) {
   return (
     <main className="app over">
@@ -33,9 +33,6 @@ export function GameOver({
       <div className="actions">
         <button type="button" className="btn btn--primary" onClick={onPlayAgain}>
           Play again
-        </button>
-        <button type="button" className="btn" onClick={onHome}>
-          Home
         </button>
       </div>
     </main>
