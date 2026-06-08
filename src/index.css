@@ -65,6 +65,40 @@ body {
   outline-color: #4cc9f0;
 }
 
+/* Color-coded flash on the just-evaluated cells. An inset ring reads on any
+   background and doesn't shift layout (it stays inside the cell). */
+.cell--flash {
+  animation: cell-flash 500ms ease;
+}
+
+.cell--flash-set {
+  --flash-color: #2ec27e;
+}
+
+.cell--flash-already-found {
+  --flash-color: #f4c20d;
+}
+
+.cell--flash-not-set {
+  --flash-color: #e63946;
+}
+
+@keyframes cell-flash {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+  30% {
+    box-shadow: inset 0 0 0 6px var(--flash-color);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell--flash {
+    animation: none;
+  }
+}
+
 .cell-shape {
   width: 72%;
   height: 72%;
@@ -103,6 +137,7 @@ body {
 
 /* Wrapper that fades each fresh board in for a smooth transition. */
 .board-wrap {
+  position: relative;
   width: min(92vw, 480px);
   animation: board-fade-in 240ms ease;
 }
@@ -118,9 +153,76 @@ body {
   }
 }
 
+/* Correct Complete: a one-shot green sweep over the whole board confirms the
+   board was cleared, distinct from the per-cell set flashes. */
+.board-wrap--sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: rgba(46, 194, 126, 0.4);
+  pointer-events: none;
+  animation: board-sweep 500ms ease forwards;
+}
+
+@keyframes board-sweep {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .board-wrap {
     animation: none;
+  }
+
+  .board-wrap--sweep::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Phone keeps a single column; the grid, complete button, and found list stack.
+   The body wrapper becomes a two-column row on wider screens (see below). */
+.game-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.board-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.side {
+  width: min(92vw, 480px);
+}
+
+/* Wide screens: center the grid with the found-sets list in a side panel, using
+   the extra width well rather than stretching the single column. */
+@media (min-width: 760px) {
+  .app.game {
+    max-width: 840px;
+  }
+
+  .game-body {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .side {
+    width: 240px;
+    flex: none;
   }
 }
 
@@ -139,6 +241,13 @@ body {
 
 .btn:hover {
   background: rgba(255, 255, 255, 0.16);
+}
+
+/* Compact square button for the top-bar mute toggle. */
+.btn--icon {
+  padding: 0.3rem 0.5rem;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .btn--primary {
@@ -301,7 +410,7 @@ body {
 }
 
 .found {
-  width: min(92vw, 480px);
+  width: 100%;
   text-align: center;
 }
 
