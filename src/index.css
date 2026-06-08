@@ -138,8 +138,11 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.topbar-mute {
+/* Right zone of the top bar: the help (?) and mute icon buttons, grouped. */
+.topbar-controls {
   justify-self: end;
+  display: flex;
+  gap: 0.4rem;
 }
 
 /* Best score: present but quiet — informative, never competing with the live
@@ -375,6 +378,19 @@ body {
 /* Onboarding intro. */
 .intro {
   text-align: center;
+}
+
+/* The help-replay overlay: the intro floated over the live game, dimming and
+   covering it while the countdown is paused underneath. Scrolls if the intro is
+   taller than the viewport on small phones. */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  background: rgba(10, 12, 24, 0.92);
 }
 
 /* One step's content, re-keyed on navigation so its reveal animation replays. */

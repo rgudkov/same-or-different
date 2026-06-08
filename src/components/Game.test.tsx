@@ -1,7 +1,8 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Game } from "./Game";
+import { loadIntroSeen } from "../lib/introSeen";
 import { loadMuted } from "../lib/mute";
 import type { Cell } from "../types";
 import type { Board } from "../lib/board";
@@ -163,5 +164,64 @@ describe("Game complete", () => {
     // +1 per set found, +3 for the correct Complete; found list resets.
     expect(score()).toBe(String(board.sets.length + 3));
     expect(screen.getByText("None yet")).toBeInTheDocument();
+  });
+});
+
+describe("Game help overlay", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // Steps to the intro's final step and presses Resume. Uses fireEvent because
+  // userEvent's internal scheduling deadlocks against fake timers.
+  function reachFinalStepAndResume() {
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+  }
+
+  it("pauses the countdown while open and resumes it on Resume", () => {
+    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} highScore={0} />);
+
+    // Let three seconds elapse: 2:00 → 1:57.
+    act(() => vi.advanceTimersByTime(3000));
+    expect(screen.getByLabelText("Time left")).toHaveTextContent("1:57");
+
+    // Open the help overlay — the intro appears with a Resume action.
+    fireEvent.click(screen.getByRole("button", { name: "How to play" }));
+    expect(screen.getByRole("dialog", { name: "How to play" })).toBeInTheDocument();
+
+    // The countdown is paused: time does not advance while the overlay is open.
+    act(() => vi.advanceTimersByTime(5000));
+    expect(screen.getByLabelText("Time left")).toHaveTextContent("1:57");
+
+    // Resuming closes the overlay and the countdown continues from 1:57.
+    reachFinalStepAndResume();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(2000));
+    expect(screen.getByLabelText("Time left")).toHaveTextContent("1:55");
+  });
+
+  it("preserves board and score and never sets the intro-seen flag", () => {
+    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} highScore={0} />);
+
+    // Score a set, then replay the intro and resume.
+    fireEvent.click(gridcell(1));
+    fireEvent.click(gridcell(2));
+    fireEvent.click(gridcell(3));
+    expect(score()).toBe("1");
+
+    fireEvent.click(screen.getByRole("button", { name: "How to play" }));
+    reachFinalStepAndResume();
+
+    // Same game: score and the found set survive the detour.
+    expect(score()).toBe("1");
+    expect(within(screen.getByRole("region", { name: "Found sets" })).getByText("1,2,3"))
+      .toBeInTheDocument();
+    // Replaying the intro must not flip the first-run "seen" flag.
+    expect(loadIntroSeen()).toBe(false);
   });
 });
