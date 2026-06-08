@@ -46,6 +46,7 @@ body {
 
 /* Cells are buttons: reset native styling, keep them square and tappable. */
 .cell {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -59,6 +60,25 @@ body {
   outline: 3px solid transparent;
   outline-offset: 2px;
   transition: outline-color 120ms ease;
+}
+
+/* Faint reading-order number (1–9) tucked into the top-left corner of every
+   cell, on both the live board and the review thumbnails. `difference` blending
+   keeps it legible on all three cell backgrounds; the low opacity keeps it from
+   competing with the shape. Non-interactive. */
+.cell-num {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  z-index: 1;
+  font-size: clamp(0.6rem, 2.4vw, 0.85rem);
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  opacity: 0.4;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .cell--selected {
@@ -103,6 +123,28 @@ body {
   width: 72%;
   height: 72%;
   pointer-events: none;
+}
+
+/* Review thumbnails (Game Over): static, non-interactive tiles. The set cells
+   are ringed in the outcome color; the other six are dimmed so the highlighted
+   triple stands out. */
+.cell--dimmed {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.cell--highlight {
+  cursor: default;
+  outline-width: 3px;
+  outline-offset: -3px;
+}
+
+.cell--highlight-found {
+  outline-color: #2ec27e;
+}
+
+.cell--highlight-missed {
+  outline-color: #e63946;
 }
 
 /* Game top bar: three zones — timer left, live score centered as the focal
@@ -592,4 +634,82 @@ body {
   background: rgba(76, 201, 240, 0.18);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.03em;
+}
+
+/* Game Over summary block: title, celebration, final and best score, grouped so
+   the full-height mobile spread treats it as one top unit. */
+.over-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Game Over set review: a titled, responsive grid of static set thumbnails —
+   a few columns on mobile, more on desktop. */
+.review {
+  width: 100%;
+  text-align: center;
+}
+
+.review-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 1rem;
+  justify-items: center;
+}
+
+/* One set thumbnail: a small board with its coordinate caption beneath. */
+.thumb {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  max-width: 150px;
+}
+
+/* Thumbnail board: fills the thumb width with tighter gaps than the live grid. */
+.board--thumb {
+  width: 100%;
+  gap: 3px;
+}
+
+.thumb-caption {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+/* Mobile full-height layout: distribute content over the viewport so the primary
+   action lands in the bottom thumb-zone. Gated to phones; desktop is unchanged.
+   100svh (small viewport height) avoids clipping/jumps from mobile browser chrome. */
+@media (max-width: 600px) {
+  .app.intro,
+  .app.over {
+    min-height: 100svh;
+    justify-content: space-between;
+  }
+
+  /* The game screen gets a gentler fill: the board stays glued to its Complete
+     button (both inside .board-col) while only the residual slack between the
+     board group and the found list is pushed down so content reaches the bottom —
+     not a full space-between of the whole screen. */
+  .app.game {
+    min-height: 100svh;
+  }
+
+  .app.game .game-body {
+    flex: 1;
+    justify-content: space-between;
+  }
 }

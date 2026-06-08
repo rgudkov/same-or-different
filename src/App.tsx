@@ -20,6 +20,10 @@ export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}
   const [highScore, setHighScore] = useState(() => loadHighScore());
   const [finalScore, setFinalScore] = useState(0);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
+  // The board the player ended on and the sets they found on it, captured at
+  // game over so the Game Over screen can review them. Null until a game ends.
+  const [finalBoard, setFinalBoard] = useState<BoardModel | null>(null);
+  const [finalFound, setFinalFound] = useState<number[][]>([]);
   // Incremented each time a game starts so `Game` remounts fresh (new board,
   // reset timer) even when consecutive games end on the same score.
   const [sessionId, setSessionId] = useState(0);
@@ -36,7 +40,8 @@ export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}
     startGame();
   }
 
-  function handleGameOver(score: number) {
+  function handleGameOver(result: { score: number; board: BoardModel; found: number[][] }) {
+    const { score, board, found } = result;
     const beaten = score > highScore;
     if (beaten) {
       setHighScore(score);
@@ -44,6 +49,8 @@ export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}
     }
     setFinalScore(score);
     setIsNewHighScore(beaten);
+    setFinalBoard(board);
+    setFinalFound(found);
     setScreen("over");
   }
 
@@ -62,11 +69,16 @@ export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}
       );
 
     case "over":
+      // finalBoard is always set before switching to "over" (handleGameOver runs
+      // first); the guard satisfies the type and falls back to a fresh game.
+      if (!finalBoard) return null;
       return (
         <GameOver
           score={finalScore}
           highScore={highScore}
           isNewHighScore={isNewHighScore}
+          board={finalBoard}
+          found={finalFound}
           onPlayAgain={startGame}
         />
       );
