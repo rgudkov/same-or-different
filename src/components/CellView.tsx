@@ -29,22 +29,34 @@ function ShapeSvg({ cell }: { cell: Cell }) {
 
 // A single board cell. Tapping toggles selection (handled by the parent);
 // `selected` drives the highlight. `position` is the 1-based reading-order
-// number used for accessibility labels.
+// number used for accessibility labels. `flash`, when set, applies a brief
+// color-coded outcome animation (e.g. "set", "not-set") to this cell.
 export function CellView({
   cell,
   position,
   selected,
+  flash,
+  flashKey,
   onSelect,
 }: {
   cell: Cell;
   position: number;
   selected: boolean;
+  flash?: string;
+  // Re-keys the element when a new flash fires so the animation replays even on
+  // back-to-back identical outcomes.
+  flashKey?: number;
   onSelect: () => void;
 }) {
   return (
     <button
       type="button"
-      className={selected ? "cell cell--selected" : "cell"}
+      key={flash ? flashKey : undefined}
+      className={
+        "cell" +
+        (selected ? " cell--selected" : "") +
+        (flash ? ` cell--flash cell--flash-${flash}` : "")
+      }
       style={{ background: BACKGROUND_HEX[cell.background] }}
       role="gridcell"
       aria-pressed={selected}

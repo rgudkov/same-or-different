@@ -1,7 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { Game } from "./Game";
+import { loadMuted } from "../lib/mute";
 import type { Cell } from "../types";
 import type { Board } from "../lib/board";
 import { findAllSets, isSet } from "../lib/board";
@@ -46,6 +47,30 @@ function gridcell(position: number): HTMLElement {
 }
 
 const noop = () => {};
+
+afterEach(() => {
+  localStorage.clear();
+});
+
+describe("Game mute toggle", () => {
+  it("toggles its state and persists the preference", async () => {
+    const user = userEvent.setup();
+    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} highScore={0} />);
+
+    // Starts unmuted (sound on).
+    const toggle = screen.getByRole("button", { name: "Mute sounds" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(toggle);
+
+    // Now muted, relabeled, and the preference is persisted.
+    expect(screen.getByRole("button", { name: "Unmute sounds" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(loadMuted()).toBe(true);
+  });
+});
 
 describe("Game selection", () => {
   it("highlights a cell on tap and clears it on a second tap", async () => {

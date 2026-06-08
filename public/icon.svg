@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Set 3×3 icon">
+  <!-- App background, matching the site theme color. -->
+  <rect width="512" height="512" fill="#1a1a2e"/>
+  <!-- Three shapes in the three shape-colors evoke the game's core idea:
+       triangle / square / circle, red / yellow / blue. Kept inside the central
+       safe zone so the icon survives maskable cropping. -->
+  <g stroke="#222" stroke-width="10" stroke-linejoin="round">
+    <polygon points="256,108 330,236 182,236" fill="#e63946"/>
+    <rect x="120" y="288" width="120" height="120" rx="12" fill="#f4c20d"/>
+    <circle cx="332" cy="348" r="60" fill="#1d6fe0"/>
+  </g>
+</svg>
