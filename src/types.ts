@@ -1,4 +1,4 @@
-// Domain model for the "Set 3×3" game.
+// Domain model for the "Same or Different" game.
 //
 // A cell is one of 27 unique combinations of three independent attributes.
 // Value sets are kept as swappable constants so palettes/shapes can change

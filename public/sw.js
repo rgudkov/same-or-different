@@ -1,4 +1,4 @@
-// Offline-first service worker for "Set 3×3". Hand-written (no build step) so it
+// Offline-first service worker for "Same or Different". Hand-written (no build step) so it
 // stays a plain static asset served under the GitHub Pages subpath. All paths are
 // relative to this script's location, so the same file works at "/" in dev and
 // "/mini-games/" in production.
@@ -16,7 +16,7 @@
 //
 // Bump CACHE_VERSION to force old caches to be dropped on the next activation.
 const CACHE_VERSION = "v1";
-const CACHE_NAME = `set3x3-${CACHE_VERSION}`;
+const CACHE_NAME = `same-or-different-${CACHE_VERSION}`;
 
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 

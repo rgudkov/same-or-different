@@ -1,6 +1,6 @@
 {
-  "name": "Set 3×3",
-  "short_name": "Set 3×3",
+  "name": "Same or Different",
+  "short_name": "Same or Different",
   "description": "A quick shape-and-color set-finding puzzle. Race a 2-minute timer to find as many sets as you can.",
   "start_url": ".",
   "scope": ".",

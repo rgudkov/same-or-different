@@ -42,7 +42,7 @@ afterEach(() => {
 describe("App home screen", () => {
   it("shows the title, Play button, and rules but not the best score", () => {
     render(<App />);
-    expect(screen.getByRole("heading", { name: "Set 3×3" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Same or Different" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "How to play" })).toBeInTheDocument();
     // The best score is intentionally not shown on Home.

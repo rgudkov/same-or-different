@@ -2,7 +2,7 @@
 export function Home({ onPlay }: { onPlay: () => void }) {
   return (
     <main className="app home">
-      <h1 className="title">Set 3×3</h1>
+      <h1 className="title">Same or Different</h1>
 
       <button type="button" className="btn btn--primary" onClick={onPlay}>
         Play

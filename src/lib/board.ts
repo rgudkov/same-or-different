@@ -1,4 +1,4 @@
-// Core domain logic for the "Set 3×3" game: the set predicate, the
+// Core domain logic for the "Same or Different" game: the set predicate, the
 // authoritative set finder, and a random board generator. Kept pure (no React,
 // no DOM) so scoring correctness can be unit-tested in isolation.
 
