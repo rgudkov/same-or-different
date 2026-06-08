@@ -48,7 +48,9 @@ export function Game({
   highScore,
   initialBoard,
 }: {
-  onGameOver: (finalScore: number) => void;
+  // Reports the final score plus the last board played and the sets found on it,
+  // so Game Over can show a review of what was on that board.
+  onGameOver: (result: { score: number; board: BoardModel; found: number[][] }) => void;
   highScore: number;
   initialBoard?: BoardModel;
 }) {
@@ -86,8 +88,10 @@ export function Game({
 
   // When the clock hits zero, end the game with the current score.
   useEffect(() => {
-    if (secondsLeft === 0) onGameOver(state.score);
-    // Only react to the clock reaching zero; score is read at that moment.
+    if (secondsLeft === 0) {
+      onGameOver({ score: state.score, board: state.board, found: state.found });
+    }
+    // Only react to the clock reaching zero; state is read at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [secondsLeft]);
 

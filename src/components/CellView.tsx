@@ -27,45 +27,84 @@ function ShapeSvg({ cell }: { cell: Cell }) {
   }
 }
 
-// A single board cell. Tapping toggles selection (handled by the parent);
-// `selected` drives the highlight. `position` is the 1-based reading-order
-// number used for accessibility labels. `flash`, when set, applies a brief
-// color-coded outcome animation (e.g. "set", "not-set") to this cell.
+// A single board cell. On the live board it is a tappable button; in the Game
+// Over review (`static`) it is a non-interactive tile. `position` is the 1-based
+// reading-order number, rendered both as a faint corner label on the cell and in
+// the accessibility label. `selected` drives the live highlight; `flash`, when
+// set, applies a brief color-coded outcome animation. On review thumbnails
+// `dimmed` quietens the non-set cells and `highlight` ("found"/"missed") rings
+// the set cells green or red.
 export function CellView({
   cell,
   position,
-  selected,
+  selected = false,
   flash,
   flashKey,
   onSelect,
+  static: isStatic = false,
+  dimmed = false,
+  highlight,
 }: {
   cell: Cell;
   position: number;
-  selected: boolean;
+  selected?: boolean;
   flash?: string;
   // Re-keys the element when a new flash fires so the animation replays even on
   // back-to-back identical outcomes.
   flashKey?: number;
-  onSelect: () => void;
+  onSelect?: () => void;
+  // Renders a non-interactive tile (Game Over review) instead of a button.
+  static?: boolean;
+  // Quietens a non-set cell on a review thumbnail.
+  dimmed?: boolean;
+  // Color-codes a set cell on a review thumbnail: green for found, red for missed.
+  highlight?: "found" | "missed";
 }) {
+  const className =
+    "cell" +
+    (selected ? " cell--selected" : "") +
+    (dimmed ? " cell--dimmed" : "") +
+    (highlight ? ` cell--highlight cell--highlight-${highlight}` : "") +
+    (flash ? ` cell--flash cell--flash-${flash}` : "");
+
+  // The faint reading-order number tucked into a corner and the shape itself.
+  // Shared by both the interactive and static renderings.
+  const content = (
+    <>
+      <span className="cell-num" aria-hidden="true">
+        {position}
+      </span>
+      <svg viewBox="0 0 100 100" className="cell-shape" aria-hidden="true">
+        <ShapeSvg cell={cell} />
+      </svg>
+    </>
+  );
+
+  if (isStatic) {
+    return (
+      <div
+        className={className}
+        style={{ background: BACKGROUND_HEX[cell.background] }}
+        role="gridcell"
+        aria-label={`Cell ${position}`}
+      >
+        {content}
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
       key={flash ? flashKey : undefined}
-      className={
-        "cell" +
-        (selected ? " cell--selected" : "") +
-        (flash ? ` cell--flash cell--flash-${flash}` : "")
-      }
+      className={className}
       style={{ background: BACKGROUND_HEX[cell.background] }}
       role="gridcell"
       aria-pressed={selected}
       aria-label={`Cell ${position}`}
       onClick={onSelect}
     >
-      <svg viewBox="0 0 100 100" className="cell-shape" aria-hidden="true">
-        <ShapeSvg cell={cell} />
-      </svg>
+      {content}
     </button>
   );
 }
