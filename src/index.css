@@ -185,8 +185,9 @@ body {
   }
 }
 
-/* Phone keeps a single column; the grid, complete button, and found list stack.
-   The body wrapper becomes a two-column row on wider screens (see below). */
+/* The whole game is one centered column: top bar, grid, Complete button, and
+   found-sets list all share the board's width so their edges line up on phone
+   and desktop alike. */
 .game-body {
   display: flex;
   flex-direction: column;
@@ -200,30 +201,11 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 1.25rem;
+  width: min(92vw, 480px);
 }
 
 .side {
   width: min(92vw, 480px);
-}
-
-/* Wide screens: center the grid with the found-sets list in a side panel, using
-   the extra width well rather than stretching the single column. */
-@media (min-width: 760px) {
-  .app.game {
-    max-width: 840px;
-  }
-
-  .game-body {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 2rem;
-  }
-
-  .side {
-    width: 240px;
-    flex: none;
-  }
 }
 
 /* Buttons: shared base plus primary and Complete variants. */
