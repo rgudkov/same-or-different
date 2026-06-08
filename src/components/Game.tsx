@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useState } from "react";
 import { Board } from "./Board";
+import { Intro } from "./Intro";
 import type { Board as BoardModel } from "../lib/board";
 import { generateBoard } from "../lib/board";
 import type { Outcome } from "../lib/game";
@@ -68,14 +69,20 @@ export function Game({
   const [flash, setFlash] = useState<{ key: number; cells: number[]; kind: Outcome } | null>(null);
   // Bumped on a correct Complete to play a one-shot green sweep over the board.
   const [sweep, setSweep] = useState(0);
+  // When true, the intro plays as a paused overlay over this same game (the help
+  // replay). Board, score, and timer state are all preserved underneath.
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // One interval drives the countdown for the whole game; it stops itself at 0.
+  // While the help overlay is open the countdown is paused: the interval is torn
+  // down and re-created (resuming from the same `secondsLeft`) when it closes.
   useEffect(() => {
+    if (helpOpen) return;
     const id = setInterval(() => {
       setSecondsLeft((s) => (s <= 1 ? 0 : s - 1));
     }, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [helpOpen]);
 
   // When the clock hits zero, end the game with the current score.
   useEffect(() => {
@@ -146,15 +153,25 @@ export function Game({
             Best {highScore}
           </span>
         </span>
-        <button
-          type="button"
-          className="btn btn--icon topbar-mute"
-          aria-label={muted ? "Unmute sounds" : "Mute sounds"}
-          aria-pressed={muted}
-          onClick={toggleMuted}
-        >
-          {muted ? "🔇" : "🔊"}
-        </button>
+        <div className="topbar-controls">
+          <button
+            type="button"
+            className="btn btn--icon"
+            aria-label="How to play"
+            onClick={() => setHelpOpen(true)}
+          >
+            ?
+          </button>
+          <button
+            type="button"
+            className="btn btn--icon"
+            aria-label={muted ? "Unmute sounds" : "Mute sounds"}
+            aria-pressed={muted}
+            onClick={toggleMuted}
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
+        </div>
       </div>
 
       <div className="game-body">
@@ -210,6 +227,19 @@ export function Game({
           </section>
         </aside>
       </div>
+
+      {helpOpen && (
+        <div
+          className="intro-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="How to play"
+        >
+          {/* Replaying the intro never touches the intro-seen flag; closing it
+              (or pressing Resume on the final step) just returns to this game. */}
+          <Intro onComplete={() => setHelpOpen(false)} actionLabel="Resume" />
+        </div>
+      )}
     </main>
   );
 }
