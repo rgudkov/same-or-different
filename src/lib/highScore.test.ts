@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadHighScore, saveHighScore } from "./highScore";
 
 afterEach(() => {
   localStorage.clear();
+  vi.restoreAllMocks();
 });
 
 describe("highScore", () => {
@@ -22,7 +23,21 @@ describe("highScore", () => {
   });
 
   it("treats non-numeric stored values as no high score", () => {
-    localStorage.setItem("set3x3.highScore", "not-a-number");
+    localStorage.setItem("sod.highScore", "not-a-number");
     expect(loadHighScore()).toBe(0);
+  });
+
+  it("degrades to 0 when storage is unavailable", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    expect(loadHighScore()).toBe(0);
+  });
+
+  it("silently no-ops a save when storage is unavailable", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    expect(() => saveHighScore(10)).not.toThrow();
   });
 });

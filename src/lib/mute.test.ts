@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadMuted, saveMuted } from "./mute";
 
 afterEach(() => {
   localStorage.clear();
+  vi.restoreAllMocks();
 });
 
 describe("mute", () => {
@@ -19,5 +20,19 @@ describe("mute", () => {
     saveMuted(true);
     saveMuted(false);
     expect(loadMuted()).toBe(false);
+  });
+
+  it("degrades to not muted when storage is unavailable", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    expect(loadMuted()).toBe(false);
+  });
+
+  it("silently no-ops a save when storage is unavailable", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    expect(() => saveMuted(true)).not.toThrow();
   });
 });

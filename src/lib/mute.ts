@@ -2,7 +2,7 @@
 // so an unavailable store (private mode, quota errors) degrades to "not muted"
 // rather than crashing.
 
-const STORAGE_KEY = "set3x3.muted";
+const STORAGE_KEY = "sod.muted";
 
 // Returns the stored mute preference, defaulting to false (sound on).
 export function loadMuted(): boolean {

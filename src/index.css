@@ -105,25 +105,41 @@ body {
   pointer-events: none;
 }
 
-/* Game top bar: timer on the left, live score on the right. */
+/* Game top bar: three zones — timer left, live score centered as the focal
+   point, mute control right. The equal 1fr side columns keep the score block
+   optically centered regardless of the timer/button widths. */
 .topbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   width: min(92vw, 480px);
   font-size: 1.2rem;
 }
 
 .timer {
+  justify-self: start;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
-.topbar-right {
+/* Centered score block: the large live score with the quiet best score beneath. */
+.score-block {
   display: flex;
-  align-items: baseline;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.05;
+}
+
+/* Live score: the focal point of the screen — large and bold. */
+.score {
+  font-size: 2.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar-mute {
+  justify-self: end;
 }
 
 /* Best score: present but quiet — informative, never competing with the live
