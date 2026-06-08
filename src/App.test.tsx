@@ -40,12 +40,13 @@ afterEach(() => {
 });
 
 describe("App home screen", () => {
-  it("shows the title, Play button, rules, and high score", () => {
+  it("shows the title, Play button, and rules but not the best score", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: "Set 3×3" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "How to play" })).toBeInTheDocument();
-    expect(screen.getByLabelText("High score")).toHaveTextContent("0");
+    // The best score is intentionally not shown on Home.
+    expect(screen.queryByLabelText("High score")).not.toBeInTheDocument();
   });
 
   it("starts a game when Play is clicked", async () => {
@@ -56,6 +57,8 @@ describe("App home screen", () => {
 
     expect(screen.getByLabelText("Time left")).toHaveTextContent("2:00");
     expect(screen.getByRole("grid", { name: "Set board" })).toBeInTheDocument();
+    // The best score is shown on the Game screen as quiet, informative text.
+    expect(screen.getByLabelText("Best score")).toHaveTextContent("Best 0");
   });
 });
 
@@ -100,8 +103,16 @@ describe("App game-over flow", () => {
     });
     unmount();
 
-    // A fresh app should read the persisted best of 1 on its Home screen.
-    render(<App />);
+    // A fresh app: play a scoreless game and confirm Game Over still reports the
+    // persisted best of 1 (and doesn't celebrate, since 0 < 1).
+    render(<App initialBoard={fixtureBoard()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    act(() => {
+      vi.advanceTimersByTime(GAME_DURATION_SECONDS * 1000);
+    });
+
+    expect(screen.getByLabelText("Final score")).toHaveTextContent("0");
     expect(screen.getByLabelText("High score")).toHaveTextContent("1");
+    expect(screen.queryByText("🎉 New best!")).not.toBeInTheDocument();
   });
 });

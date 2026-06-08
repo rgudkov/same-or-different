@@ -50,7 +50,7 @@ const noop = () => {};
 describe("Game selection", () => {
   it("highlights a cell on tap and clears it on a second tap", async () => {
     const user = userEvent.setup();
-    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} />);
+    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} highScore={0} />);
 
     await user.click(gridcell(1));
     expect(gridcell(1)).toHaveAttribute("aria-pressed", "true");
@@ -61,7 +61,7 @@ describe("Game selection", () => {
 
   it("auto-evaluates and clears the selection on the third tap", async () => {
     const user = userEvent.setup();
-    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} />);
+    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} highScore={0} />);
 
     await user.click(gridcell(1));
     await user.click(gridcell(2));
@@ -76,7 +76,7 @@ describe("Game selection", () => {
 describe("Game scoring", () => {
   it("awards +1 and lists a valid set as sorted cell numbers", async () => {
     const user = userEvent.setup();
-    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} />);
+    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} highScore={0} />);
 
     await user.click(gridcell(1));
     await user.click(gridcell(2));
@@ -89,7 +89,7 @@ describe("Game scoring", () => {
 
   it("awards 0 when re-submitting an already-found set", async () => {
     const user = userEvent.setup();
-    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} />);
+    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} highScore={0} />);
 
     for (const pos of [1, 2, 3, 1, 2, 3]) await user.click(gridcell(pos));
 
@@ -100,7 +100,7 @@ describe("Game scoring", () => {
 
   it("subtracts 1 when three cells are not a set and lists nothing", async () => {
     const user = userEvent.setup();
-    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} />);
+    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} highScore={0} />);
 
     await user.click(gridcell(1));
     await user.click(gridcell(2));
@@ -114,7 +114,7 @@ describe("Game scoring", () => {
 describe("Game complete", () => {
   it("subtracts 1 and keeps playing on a wrong Complete", async () => {
     const user = userEvent.setup();
-    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} />);
+    render(<Game initialBoard={fixtureBoard()} onGameOver={noop} highScore={0} />);
 
     await user.click(screen.getByRole("button", { name: /no more sets/i }));
 
@@ -127,7 +127,7 @@ describe("Game complete", () => {
   it("awards +3 and loads a fresh board once every set is found", async () => {
     const user = userEvent.setup();
     const board = fixtureBoard();
-    render(<Game initialBoard={board} onGameOver={noop} />);
+    render(<Game initialBoard={board} onGameOver={noop} highScore={0} />);
 
     // Find every set on the board, then declare complete.
     for (const triple of board.sets) {

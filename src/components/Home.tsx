@@ -1,12 +1,5 @@
-// The landing screen: title, Play, a concise how-to + scoring summary, and the
-// player's best score so far.
-export function Home({
-  highScore,
-  onPlay,
-}: {
-  highScore: number;
-  onPlay: () => void;
-}) {
+// The landing screen: title, Play, and a concise how-to + scoring summary.
+export function Home({ onPlay }: { onPlay: () => void }) {
   return (
     <main className="app home">
       <h1 className="title">Set 3×3</h1>
@@ -31,10 +24,6 @@ export function Home({
           <li>Wrong Complete: −1</li>
         </ul>
       </section>
-
-      <p className="high-score">
-        Best: <strong aria-label="High score">{highScore}</strong>
-      </p>
     </main>
   );
 }

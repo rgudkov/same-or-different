@@ -39,9 +39,11 @@ function formatTime(totalSeconds: number): string {
 // Over. `initialBoard` lets tests inject a deterministic board.
 export function Game({
   onGameOver,
+  highScore,
   initialBoard,
 }: {
   onGameOver: (finalScore: number) => void;
+  highScore: number;
   initialBoard?: BoardModel;
 }) {
   const [state, dispatch] = useReducer(gameReducer, undefined, () =>
@@ -100,8 +102,13 @@ export function Game({
         <span className="timer" aria-label="Time left">
           {formatTime(secondsLeft)}
         </span>
-        <span className="stat">
-          Score: <strong aria-label="Score">{state.score}</strong>
+        <span className="topbar-right">
+          <span className="best-inline" aria-label="Best score">
+            Best {highScore}
+          </span>
+          <span className="stat">
+            Score: <strong aria-label="Score">{state.score}</strong>
+          </span>
         </span>
       </div>
 

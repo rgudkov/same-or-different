@@ -37,13 +37,14 @@ export default function App({ initialBoard }: { initialBoard?: BoardModel } = {}
 
   switch (screen) {
     case "home":
-      return <Home highScore={highScore} onPlay={startGame} />;
+      return <Home onPlay={startGame} />;
 
     case "playing":
       return (
         <Game
           key={sessionId}
           initialBoard={initialBoard}
+          highScore={highScore}
           onGameOver={handleGameOver}
         />
       );
