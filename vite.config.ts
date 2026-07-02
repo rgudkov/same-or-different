@@ -3,9 +3,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 // `base` must match the GitHub Pages subpath so assets resolve correctly:
-// the site is served from https://<user>.github.io/mini-games/.
+// the site is served from https://<user>.github.io/same-or-different/.
 export default defineConfig({
-  base: "/mini-games/",
+  base: "/same-or-different/",
   plugins: [react()],
   test: {
     // Component tests render into a DOM; pure logic/reducer tests run here too.

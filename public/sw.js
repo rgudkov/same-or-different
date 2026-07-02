@@ -1,7 +1,7 @@
 // Offline-first service worker for "Same or Different". Hand-written (no build step) so it
 // stays a plain static asset served under the GitHub Pages subpath. All paths are
 // relative to this script's location, so the same file works at "/" in dev and
-// "/mini-games/" in production.
+// "/same-or-different/" in production.
 //
 // Strategy:
 //   - App shell (index.html, manifest, icon) is precached on install so the very
