@@ -198,11 +198,14 @@ function StepContent({ step, reducedMotion }: { step: number; reducedMotion: boo
               Tap <strong>No more sets</strong> when the board has none left.
             </li>
             <li>
-              One <strong>2-minute</strong> clock runs the whole game.
-            </li>
-            <li>
               Set <strong>+1</strong>, not a set <strong>−1</strong>, cleared
               board <strong>+3</strong>, wrong call <strong>−1</strong>.
+            </li>
+            <li>
+              <strong>Daily mode</strong> is one untimed board a day, the
+              same for everyone. Prefer a clock? <strong>Timed mode</strong>{" "}
+              is a separate 2-minute rush through as many boards as you can
+              clear.
             </li>
           </ul>
         </>
