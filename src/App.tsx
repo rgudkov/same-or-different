@@ -59,6 +59,10 @@ export default function App({
   // board, reset timer) even when consecutive games end on the same score.
   const [sessionId, setSessionId] = useState(0);
   const [streak, setStreak] = useState(() => loadStreak());
+  // True only when streak-status is reached straight from finishing today's
+  // Daily (not on a later same-day reopen), so the confetti/celebration copy
+  // shows once rather than on every revisit.
+  const [justCompletedDaily, setJustCompletedDaily] = useState(false);
 
   function startGame() {
     setSessionId((id) => id + 1);
@@ -81,6 +85,7 @@ export default function App({
     };
     saveStreak(updated);
     setStreak(updated);
+    setJustCompletedDaily(true);
     setScreen("streak-status");
   }
 
@@ -121,6 +126,7 @@ export default function App({
           currentStreak={streak.currentStreak}
           longestStreak={streak.longestStreak}
           result={streak.lastResult}
+          justCompleted={justCompletedDaily}
           onPlayTimed={startGame}
         />
       );

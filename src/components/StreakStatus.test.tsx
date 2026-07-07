@@ -10,6 +10,7 @@ describe("StreakStatus", () => {
         currentStreak={5}
         longestStreak={9}
         result={{ date: "2026-07-07", timeTakenSeconds: 65, mistakeCount: 2 }}
+        justCompleted={false}
         onPlayTimed={() => {}}
       />,
     );
@@ -26,6 +27,7 @@ describe("StreakStatus", () => {
         currentStreak={1}
         longestStreak={1}
         result={{ date: "2026-07-07", timeTakenSeconds: 30, mistakeCount: 1 }}
+        justCompleted={false}
         onPlayTimed={() => {}}
       />,
     );
@@ -35,7 +37,13 @@ describe("StreakStatus", () => {
 
   it("tells the player the puzzle can't be replayed", () => {
     render(
-      <StreakStatus currentStreak={1} longestStreak={1} result={null} onPlayTimed={() => {}} />,
+      <StreakStatus
+        currentStreak={1}
+        longestStreak={1}
+        result={null}
+        justCompleted={false}
+        onPlayTimed={() => {}}
+      />,
     );
 
     expect(screen.getByText(/can't be replayed/)).toBeInTheDocument();
@@ -45,12 +53,46 @@ describe("StreakStatus", () => {
     const user = userEvent.setup();
     const onPlayTimed = vi.fn();
     render(
-      <StreakStatus currentStreak={1} longestStreak={1} result={null} onPlayTimed={onPlayTimed} />,
+      <StreakStatus
+        currentStreak={1}
+        longestStreak={1}
+        result={null}
+        justCompleted={false}
+        onPlayTimed={onPlayTimed}
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: "Play Timed mode" }));
 
     expect(onPlayTimed).toHaveBeenCalled();
+  });
+
+  it("shows congratulatory copy right after completing", () => {
+    render(
+      <StreakStatus
+        currentStreak={1}
+        longestStreak={1}
+        result={null}
+        justCompleted={true}
+        onPlayTimed={() => {}}
+      />,
+    );
+
+    expect(screen.getByText(/nice work/i)).toBeInTheDocument();
+  });
+
+  it("shows quieter status copy on a later same-day visit", () => {
+    render(
+      <StreakStatus
+        currentStreak={1}
+        longestStreak={1}
+        result={null}
+        justCompleted={false}
+        onPlayTimed={() => {}}
+      />,
+    );
+
+    expect(screen.getByText(/today's daily is done/i)).toBeInTheDocument();
   });
 
   describe("sharing today's result", () => {
@@ -68,6 +110,7 @@ describe("StreakStatus", () => {
           currentStreak={5}
           longestStreak={9}
           result={{ date: "2026-07-07", timeTakenSeconds: 65, mistakeCount: 2 }}
+          justCompleted={false}
           onPlayTimed={() => {}}
         />,
       );
@@ -92,6 +135,7 @@ describe("StreakStatus", () => {
           currentStreak={5}
           longestStreak={9}
           result={{ date: "2026-07-07", timeTakenSeconds: 65, mistakeCount: 2 }}
+          justCompleted={false}
           onPlayTimed={() => {}}
         />,
       );
@@ -104,7 +148,13 @@ describe("StreakStatus", () => {
 
     it("does not show a Share button when there is no result to share", () => {
       render(
-        <StreakStatus currentStreak={1} longestStreak={1} result={null} onPlayTimed={() => {}} />,
+        <StreakStatus
+          currentStreak={1}
+          longestStreak={1}
+          result={null}
+          justCompleted={false}
+          onPlayTimed={() => {}}
+        />,
       );
 
       expect(screen.queryByRole("button", { name: "Share" })).not.toBeInTheDocument();
