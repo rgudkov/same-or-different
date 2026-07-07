@@ -61,11 +61,23 @@ export const PlaySession = forwardRef<
     // they stood at the moment of completion (before the reducer resets to
     // `nextBoard`'s clean slate).
     onCorrectComplete?: (result: PlaySessionResult) => void;
+    // Fires on every scored action (an evaluation or a Complete) with its
+    // outcome, so a wrapping screen can tally its own derived stats (e.g.
+    // Daily's mistake count) without duplicating the scoring rules.
+    onOutcome?: (outcome: Outcome) => void;
     onHelpOpenChange?: (open: boolean) => void;
     timerSlot?: ReactNode;
   }
 >(function PlaySession(
-  { initialBoard, highScore, getNextBoard, onCorrectComplete, onHelpOpenChange, timerSlot },
+  {
+    initialBoard,
+    highScore,
+    getNextBoard,
+    onCorrectComplete,
+    onOutcome,
+    onHelpOpenChange,
+    timerSlot,
+  },
   ref,
 ) {
   const [state, dispatch] = useReducer(gameReducer, undefined, () => initGameState(initialBoard));
@@ -109,6 +121,7 @@ export const PlaySession = forwardRef<
   useEffect(() => {
     if (!state.lastOutcome) return;
     playOutcome(state.lastOutcome, muted);
+    onOutcome?.(state.lastOutcome);
 
     setToast({ id: state.feedbackId, outcome: state.lastOutcome });
     const toastTimeout = setTimeout(() => setToast(null), TOAST_DURATION_MS);

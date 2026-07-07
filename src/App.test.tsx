@@ -7,6 +7,7 @@ import type { Cell } from "./types";
 import type { Board } from "./lib/board";
 import { findAllSets, isSet } from "./lib/board";
 import { GAME_DURATION_SECONDS } from "./components/Game";
+import { todayLocalDate } from "./lib/today";
 
 function cell(
   background: Cell["background"],
@@ -43,6 +44,12 @@ async function playThroughIntro(user: UserEvent) {
   await user.click(screen.getByRole("button", { name: "Play" }));
 }
 
+// From the Daily landing or streak-status screen, follows the link into Timed
+// mode.
+function enterTimedMode() {
+  fireEvent.click(screen.getByRole("button", { name: /timed mode/i }));
+}
+
 afterEach(() => {
   localStorage.clear();
 });
@@ -57,32 +64,104 @@ describe("App first-run intro", () => {
     expect(screen.queryByRole("region", { name: "How to play" })).not.toBeInTheDocument();
   });
 
-  it("steps to Play, which sets the seen flag and starts a fresh game", async () => {
+  it("steps to Play, which sets the seen flag and lands on the Daily landing screen", async () => {
     const user = userEvent.setup();
     render(<App initialBoard={fixtureBoard()} />);
 
     await playThroughIntro(user);
 
-    expect(screen.getByRole("grid", { name: "Set board" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Time left")).toHaveTextContent("2:00");
+    expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
     expect(localStorage.getItem("sod.introSeen")).toBe("true");
   });
 });
 
 describe("App returning player", () => {
-  it("skips the intro and launches straight into a game", () => {
+  it("skips the intro and lands on the Daily landing screen when today's Daily is unfinished", () => {
     localStorage.setItem("sod.introSeen", "true");
     render(<App initialBoard={fixtureBoard()} />);
 
-    expect(screen.getByRole("grid", { name: "Set board" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Intro progress")).not.toBeInTheDocument();
+  });
+
+  it("lands on the streak-status screen when today's Daily is already complete", () => {
+    localStorage.setItem("sod.introSeen", "true");
+    localStorage.setItem(
+      "sod.streak",
+      JSON.stringify({
+        currentStreak: 3,
+        longestStreak: 3,
+        lastCompletedDate: todayLocalDate(),
+        lastResult: { date: todayLocalDate(), timeTakenSeconds: 40, mistakeCount: 1 },
+      }),
+    );
+    render(<App initialBoard={fixtureBoard()} />);
+
+    expect(screen.getByLabelText("Current streak")).toHaveTextContent("3");
+    expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
+  });
+});
+
+describe("App Daily mode flow", () => {
+  beforeEach(() => {
+    localStorage.setItem("sod.introSeen", "true");
+  });
+
+  it("plays through Daily, updates the streak, and shows the streak-status screen", async () => {
+    const user = userEvent.setup();
+    const board = fixtureBoard();
+    render(<App initialDailyBoard={board} />);
+
+    await user.click(screen.getByRole("button", { name: "Start" }));
+    expect(screen.getByRole("grid", { name: "Set board" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Time left")).not.toBeInTheDocument();
+
+    for (const triple of board.sets) {
+      for (const index of triple) {
+        await user.click(screen.getByRole("gridcell", { name: `Cell ${index + 1}` }));
+      }
+    }
+    await user.click(screen.getByRole("button", { name: /no more sets/i }));
+
+    expect(screen.getByLabelText("Current streak")).toHaveTextContent("1");
+    expect(screen.getByLabelText("Longest streak")).toHaveTextContent("1");
+    expect(screen.getByLabelText("Today's result")).toHaveTextContent("0 mistakes");
+  });
+
+  it("reappears on streak-status on a later launch the same day, without replaying Daily", async () => {
+    const user = userEvent.setup();
+    const board = fixtureBoard();
+    const { unmount } = render(<App initialDailyBoard={board} />);
+
+    await user.click(screen.getByRole("button", { name: "Start" }));
+    for (const triple of board.sets) {
+      for (const index of triple) {
+        await user.click(screen.getByRole("gridcell", { name: `Cell ${index + 1}` }));
+      }
+    }
+    await user.click(screen.getByRole("button", { name: /no more sets/i }));
+    unmount();
+
+    render(<App initialDailyBoard={board} />);
+
+    expect(screen.getByLabelText("Current streak")).toHaveTextContent("1");
+    expect(screen.queryByRole("button", { name: "Start" })).not.toBeInTheDocument();
+  });
+
+  it("links from Daily landing and streak-status to Timed mode", () => {
+    render(<App initialBoard={fixtureBoard()} />);
+
+    enterTimedMode();
+
+    expect(screen.getByRole("grid", { name: "Set board" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Time left")).toHaveTextContent("2:00");
   });
 });
 
 describe("App game-over flow", () => {
   beforeEach(() => {
-    // Seed the seen flag so the app launches straight into play, skipping the
-    // intro these tests don't exercise.
+    // Seed the seen flag so the app launches straight into the Daily landing
+    // screen, skipping the intro these tests don't exercise.
     localStorage.setItem("sod.introSeen", "true");
     vi.useFakeTimers();
   });
@@ -101,6 +180,7 @@ describe("App game-over flow", () => {
 
   it("ends the game at timer zero and shows the final score", () => {
     render(<App initialBoard={fixtureBoard()} />);
+    enterTimedMode();
 
     scoreOneSet();
     act(() => {
@@ -114,6 +194,7 @@ describe("App game-over flow", () => {
 
   it("offers Play again and no Home button on Game Over", () => {
     render(<App initialBoard={fixtureBoard()} />);
+    enterTimedMode();
 
     act(() => {
       vi.advanceTimersByTime(GAME_DURATION_SECONDS * 1000);
@@ -125,6 +206,7 @@ describe("App game-over flow", () => {
 
   it("persists the high score so a later session sees it", () => {
     const { unmount } = render(<App initialBoard={fixtureBoard()} />);
+    enterTimedMode();
 
     scoreOneSet();
     act(() => {
@@ -135,6 +217,7 @@ describe("App game-over flow", () => {
     // A fresh app: play a scoreless game and confirm Game Over still reports the
     // persisted best of 1 (and doesn't celebrate, since 0 < 1).
     render(<App initialBoard={fixtureBoard()} />);
+    enterTimedMode();
     act(() => {
       vi.advanceTimersByTime(GAME_DURATION_SECONDS * 1000);
     });
