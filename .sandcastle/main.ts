@@ -30,7 +30,7 @@ import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 
 // Maximum number of implement→review cycles to run before stopping.
 // Each cycle works on one issue. Raise this to process more issues per run.
-const MAX_ITERATIONS = 4;
+const MAX_ITERATIONS = 3;
 
 // Hooks run inside the sandbox before the agent starts each iteration.
 // npm install ensures the sandbox always has fresh dependencies.

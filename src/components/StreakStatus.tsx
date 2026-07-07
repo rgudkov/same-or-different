@@ -8,11 +8,13 @@ function formatTime(totalSeconds: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+const GAME_URL = "https://rgudkov.github.io/same-or-different/";
+
 // Text handed to the OS share sheet / clipboard. Deliberately omits any
 // day-number/epoch framing (per ADR 0003 and the PRD).
 function shareText(result: StreakResult): string {
   const mistakeWord = result.mistakeCount === 1 ? "mistake" : "mistakes";
-  return `Same or Different — ${formatTime(result.timeTakenSeconds)}, ${result.mistakeCount} ${mistakeWord}`;
+  return `🎉 I finished today's puzzle in ${formatTime(result.timeTakenSeconds)} with ${result.mistakeCount} ${mistakeWord}. How quick are you? Try ${GAME_URL} 🧩`;
 }
 
 // Hands off to the OS share sheet (ADR 0003: one Web Share API call rather

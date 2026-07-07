@@ -75,12 +75,9 @@ describe("StreakStatus", () => {
       await user.click(screen.getByRole("button", { name: "Share" }));
 
       expect(share).toHaveBeenCalledWith({
-        text: expect.stringContaining("1:05"),
+        text: "🎉 I finished today's puzzle in 1:05 with 2 mistakes. How quick are you? Try https://rgudkov.github.io/same-or-different/ 🧩",
       });
-      expect(share).toHaveBeenCalledWith({
-        text: expect.stringContaining("2 mistakes"),
-      });
-      expect(share.mock.calls[0][0].text).not.toMatch(/day/i);
+      expect(share.mock.calls[0][0].text).not.toMatch(/day \d/i);
     });
 
     it("copies the result text to the clipboard when the Web Share API is unavailable", async () => {
