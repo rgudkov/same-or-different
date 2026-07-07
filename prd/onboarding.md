@@ -58,13 +58,16 @@ but quiet.
 - The Game Over screen keeps "Play Again" (straight into a new game) and **removes** its "Home" button.
 
 ### Intro structure
-- **Three steps**, navigated with Previous/Next plus a 3-dot progress indicator. No "Skip" on the first run.
-  1. **The rule** — a valid-set example with the three attribute checks revealed one-by-one (each marked ✓), chosen so both "all same" and "all different" appear in one example.
-  2. **The counter-example** — a near-set that fails on exactly one attribute (the only way to fail); the failing attribute is flagged with an ✗.
-  3. **How to play** — concise combined note: tap 3 cells, use "No more sets" when none remain, 2-minute clock, one-line scoring.
+- **Six steps**, navigated with Previous/Next plus a 6-dot progress indicator. No "Skip" on the first run.
+  1. **Shape** — names the attribute, then reveals a "same" example (shape fixed, background and shape color vary) followed by a "different" example (shape takes all three values, background and shape color held constant).
+  2. **Shape color** — the same same/different pair, isolating shape color.
+  3. **Background** — the same same/different pair, isolating background.
+  4. **The rule** — a valid-set example with the three attribute checks revealed one-by-one (each marked ✓), chosen so both "all same" and "all different" appear in one example.
+  5. **The counter-example** — a near-set that fails on exactly one attribute (the only way to fail); the failing attribute is flagged with an ✗.
+  6. **How to play** — concise combined note: tap 3 cells, use "No more sets" when none remain, 2-minute clock, one-line scoring.
 - The Next control on the final step **becomes** the action button: **Play** on first run, **Resume** when replaying.
-- **Animation approach:** sequenced reveal of the per-attribute checks with cell pulses, rendered on the game's real cell component. Animations **play once per visit to a step** (re-triggered by navigating to a step), with no continuous loop. They degrade to static under `prefers-reduced-motion`.
-- **Example cells are hand-authored constants**, not randomly generated, so the lesson is deterministic and pedagogically clean.
+- **Animation approach:** sequenced reveal — per-attribute checks on the rule/counter-example steps, and a same-then-different example pair on the attribute steps — with cell pulses, rendered on the game's real cell component. Animations **play once per visit to a step** (re-triggered by navigating to a step), with no continuous loop. They degrade to static under `prefers-reduced-motion`.
+- **Example cells are hand-authored constants**, not randomly generated, so the lesson is deterministic and pedagogically clean. Each attribute step's examples are checked at dev time to genuinely isolate their attribute (target attribute all-same or all-distinct as claimed, other two held constant or varied as claimed).
 
 ### Replay from the game screen
 - A compact **help (`?`) icon button** sits next to the mute button in the top bar.

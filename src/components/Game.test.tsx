@@ -178,8 +178,9 @@ describe("Game help overlay", () => {
   // Steps to the intro's final step and presses Resume. Uses fireEvent because
   // userEvent's internal scheduling deadlocks against fake timers.
   function reachFinalStepAndResume() {
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    for (let i = 0; i < 5; i++) {
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    }
     fireEvent.click(screen.getByRole("button", { name: "Resume" }));
   }
 

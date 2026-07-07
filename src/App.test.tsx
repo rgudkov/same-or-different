@@ -37,10 +37,11 @@ function fixtureBoard(): Board {
   return board;
 }
 
-// Steps through the 3-step intro and presses Play on the final step.
+// Steps through the 6-step intro and presses Play on the final step.
 async function playThroughIntro(user: UserEvent) {
-  await user.click(screen.getByRole("button", { name: "Next" }));
-  await user.click(screen.getByRole("button", { name: "Next" }));
+  for (let i = 0; i < 5; i++) {
+    await user.click(screen.getByRole("button", { name: "Next" }));
+  }
   await user.click(screen.getByRole("button", { name: "Play" }));
 }
 

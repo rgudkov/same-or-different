@@ -524,6 +524,34 @@ body {
   font-weight: 600;
 }
 
+/* The same/different example pair on an attribute-teaching step. */
+.intro-attr-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  width: 100%;
+}
+
+.intro-attr-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.intro-attr-group--shown {
+  opacity: 1;
+  transform: none;
+}
+
+.intro-attr-caption {
+  margin: 0;
+  font-weight: 600;
+}
+
 .intro-howto {
   text-align: left;
   line-height: 1.6;
@@ -562,6 +590,10 @@ body {
   }
 
   .intro-check {
+    transition: none;
+  }
+
+  .intro-attr-group {
     transition: none;
   }
 }

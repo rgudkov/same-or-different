@@ -3,18 +3,40 @@ import type { Cell } from "../types";
 import { isSet } from "../lib/board";
 import { CellView } from "./CellView";
 
-// The onboarding intro: a short, 3-step, animated explanation that teaches the
-// set rule by showing it, then reveals the action button (Play on first run,
-// Resume when replayed) only on the final step. It replaces the former static
-// Home screen.
+// The onboarding intro: a short, animated explanation that teaches the set
+// rule by first introducing each attribute in isolation (shape, shape color,
+// background), then showing a full valid-set example, a near-miss
+// counter-example, and how to play. It reveals the action button (Play on
+// first run, Resume when replayed) only on the final step. It replaces the
+// former static Home screen.
 
-// The intro is always exactly three steps.
-const STEP_COUNT = 3;
+// The intro is always exactly six steps: one per attribute, then the
+// valid-set example, the near-miss example, and how-to-play.
+const STEP_COUNT = 6;
 
-// Delay between each attribute check revealing on the example steps.
+// Delay between each staged reveal — per-attribute checks on the set-level
+// example steps, or the same-then-different pair on the attribute steps.
 const REVEAL_INTERVAL_MS = 650;
 
-// A single attribute verdict shown on an example step.
+const CELL_KEYS = ["background", "shape", "shapeColor"] as const;
+type CellKey = (typeof CELL_KEYS)[number];
+
+// The two attribute keys not being taught by a given attribute step — used to
+// check that they vary (in the "same" example) or stay constant (in the
+// "different" example).
+function otherKeys(key: CellKey): CellKey[] {
+  return CELL_KEYS.filter((k) => k !== key);
+}
+
+function allEqual<T>(values: T[]): boolean {
+  return values.every((v) => v === values[0]);
+}
+
+function allDistinct<T>(values: T[]): boolean {
+  return new Set(values).size === values.length;
+}
+
+// A single attribute verdict shown on a set-level example step.
 type Check = {
   label: string;
   // The reason the attribute passes or fails, e.g. "all the same".
@@ -22,10 +44,96 @@ type Check = {
   pass: boolean;
 };
 
-// Hand-authored example cells (deterministic, never generated) so the lesson is
-// always visually clear and unambiguous.
+// One hand-authored example (deterministic, never generated) used on an
+// attribute-teaching step.
+type AttributeExample = {
+  cells: [Cell, Cell, Cell];
+  caption: string;
+};
 
-// Step 1 — a valid set. Background is all-same while shape and shape color are
+// Config for one attribute-teaching step: the attribute it isolates, an
+// example where that attribute is the same across all three cells (the other
+// two vary, so it isn't a trivial triple-clone), and an example where it's
+// different across all three (the other two held constant, so it's the only
+// thing that visibly changes).
+type AttributeConfig = {
+  key: CellKey;
+  label: string;
+  lead: string;
+  same: AttributeExample;
+  different: AttributeExample;
+};
+
+const SHAPE_CONFIG: AttributeConfig = {
+  key: "shape",
+  label: "Shape",
+  lead: "A cell's shape can be the same across all three cells, or different across all three.",
+  same: {
+    cells: [
+      { background: "black", shape: "triangle", shapeColor: "red" },
+      { background: "white", shape: "triangle", shapeColor: "blue" },
+      { background: "grey", shape: "triangle", shapeColor: "yellow" },
+    ],
+    caption: "Shape: all the same (triangle).",
+  },
+  different: {
+    cells: [
+      { background: "black", shape: "triangle", shapeColor: "red" },
+      { background: "black", shape: "square", shapeColor: "red" },
+      { background: "black", shape: "circle", shapeColor: "red" },
+    ],
+    caption: "Shape: all different.",
+  },
+};
+
+const SHAPE_COLOR_CONFIG: AttributeConfig = {
+  key: "shapeColor",
+  label: "Shape color",
+  lead: "A cell's shape color can be the same across all three cells, or different across all three.",
+  same: {
+    cells: [
+      { background: "black", shape: "triangle", shapeColor: "red" },
+      { background: "white", shape: "square", shapeColor: "red" },
+      { background: "grey", shape: "circle", shapeColor: "red" },
+    ],
+    caption: "Shape color: all the same (red).",
+  },
+  different: {
+    cells: [
+      { background: "black", shape: "square", shapeColor: "red" },
+      { background: "black", shape: "square", shapeColor: "blue" },
+      { background: "black", shape: "square", shapeColor: "yellow" },
+    ],
+    caption: "Shape color: all different.",
+  },
+};
+
+const BACKGROUND_CONFIG: AttributeConfig = {
+  key: "background",
+  label: "Background",
+  lead: "A cell's background can be the same across all three cells, or different across all three.",
+  same: {
+    cells: [
+      { background: "black", shape: "triangle", shapeColor: "yellow" },
+      { background: "black", shape: "square", shapeColor: "red" },
+      { background: "black", shape: "circle", shapeColor: "blue" },
+    ],
+    caption: "Background: all the same (black).",
+  },
+  different: {
+    cells: [
+      { background: "black", shape: "circle", shapeColor: "blue" },
+      { background: "white", shape: "circle", shapeColor: "blue" },
+      { background: "grey", shape: "circle", shapeColor: "blue" },
+    ],
+    caption: "Background: all different.",
+  },
+};
+
+// The three attribute-teaching steps, in the order they're taught.
+const ATTRIBUTE_CONFIGS: AttributeConfig[] = [SHAPE_CONFIG, SHAPE_COLOR_CONFIG, BACKGROUND_CONFIG];
+
+// A valid set. Background is all-same while shape and shape color are
 // all-different, so both "all same" and "all different" appear in one example.
 const VALID_EXAMPLE: [Cell, Cell, Cell] = [
   { background: "black", shape: "triangle", shapeColor: "red" },
@@ -39,8 +147,8 @@ const VALID_CHECKS: Check[] = [
   { label: "Shape color", verdict: "all different", pass: true },
 ];
 
-// Step 2 — a near-set that fails on exactly one attribute. The shape colors are
-// two reds and a blue (neither all same nor all different); the other two
+// A near-set that fails on exactly one attribute. The shape colors are two
+// reds and a blue (neither all same nor all different); the other two
 // attributes still pass, so a single ✗ is the whole lesson.
 const NEAR_MISS_EXAMPLE: [Cell, Cell, Cell] = [
   { background: "black", shape: "triangle", shapeColor: "red" },
@@ -54,8 +162,9 @@ const NEAR_MISS_CHECKS: Check[] = [
   { label: "Shape color", verdict: "two red, one blue", pass: false },
 ];
 
-// Dev-time invariants: keep the hand-authored examples honest if cells are ever
-// edited. A valid-set example that isn't a set (or a near-miss that is) would
+// Dev-time invariants: keep the hand-authored examples honest if cells are
+// ever edited. A valid-set example that isn't a set (or a near-miss that is),
+// or an attribute example that doesn't actually isolate its attribute, would
 // silently teach the wrong lesson.
 if (import.meta.env.DEV) {
   if (!isSet(...VALID_EXAMPLE)) {
@@ -63,6 +172,34 @@ if (import.meta.env.DEV) {
   }
   if (isSet(...NEAR_MISS_EXAMPLE)) {
     throw new Error("Intro: NEAR_MISS_EXAMPLE must not be a set");
+  }
+
+  for (const config of ATTRIBUTE_CONFIGS) {
+    const sameTarget = config.same.cells.map((c) => c[config.key]);
+    if (!allEqual(sameTarget)) {
+      throw new Error(`Intro: ${config.label} same-example must share ${config.key}`);
+    }
+    const sameOthersVary = otherKeys(config.key).some(
+      (k) => !allEqual(config.same.cells.map((c) => c[k]))
+    );
+    if (!sameOthersVary) {
+      throw new Error(`Intro: ${config.label} same-example must vary the other attributes`);
+    }
+
+    const differentTarget = config.different.cells.map((c) => c[config.key]);
+    if (!allDistinct(differentTarget)) {
+      throw new Error(
+        `Intro: ${config.label} different-example must use 3 distinct ${config.key} values`
+      );
+    }
+    const differentOthersConstant = otherKeys(config.key).every((k) =>
+      allEqual(config.different.cells.map((c) => c[k]))
+    );
+    if (!differentOthersConstant) {
+      throw new Error(
+        `Intro: ${config.label} different-example must hold the other attributes constant`
+      );
+    }
   }
 }
 
@@ -107,8 +244,9 @@ function useStaggeredReveal(count: number, reducedMotion: boolean): number {
   return revealed;
 }
 
-// An example step: the three example cells with their per-attribute checks
-// revealed one by one (the cells pulse on each reveal via the keyed container).
+// A set-level example step: the three example cells with their per-attribute
+// checks revealed one by one (the cells pulse on each reveal via the keyed
+// container).
 function ExampleStep({
   cells,
   checks,
@@ -155,8 +293,57 @@ function ExampleStep({
   );
 }
 
+// One example group (three cells plus a caption) on an attribute step. Keyed
+// on `shown` so it pulses in the moment it's revealed, without re-triggering
+// once already shown.
+function AttributeExampleGroup({ example, shown }: { example: AttributeExample; shown: boolean }) {
+  return (
+    <div className={"intro-attr-group" + (shown ? " intro-attr-group--shown" : "")}>
+      <div className="intro-cells" key={shown ? "shown" : "hidden"} aria-hidden="true">
+        {example.cells.map((cell, i) => (
+          <CellView
+            key={i}
+            cell={cell}
+            position={i + 1}
+            selected={false}
+            onSelect={() => {}}
+          />
+        ))}
+      </div>
+      <p className="intro-attr-caption">{example.caption}</p>
+    </div>
+  );
+}
+
+// An attribute-teaching step: names the attribute, then reveals a
+// "same"-example followed by a "different"-example, staggered so the lesson
+// builds one comparison at a time.
+function AttributeStep({
+  config,
+  reducedMotion,
+}: {
+  config: AttributeConfig;
+  reducedMotion: boolean;
+}) {
+  const revealed = useStaggeredReveal(2, reducedMotion);
+  return (
+    <>
+      <h1 className="intro-title">{config.label}</h1>
+      <p className="intro-lead">{config.lead}</p>
+      <div className="intro-attr-examples">
+        <AttributeExampleGroup example={config.same} shown={revealed >= 1} />
+        <AttributeExampleGroup example={config.different} shown={revealed >= 2} />
+      </div>
+    </>
+  );
+}
+
 function StepContent({ step, reducedMotion }: { step: number; reducedMotion: boolean }) {
-  switch (step) {
+  if (step < ATTRIBUTE_CONFIGS.length) {
+    return <AttributeStep config={ATTRIBUTE_CONFIGS[step]} reducedMotion={reducedMotion} />;
+  }
+
+  switch (step - ATTRIBUTE_CONFIGS.length) {
     case 0:
       return (
         <>
