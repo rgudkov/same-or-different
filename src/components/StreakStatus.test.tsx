@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { StreakStatus } from "./StreakStatus";
 
 describe("StreakStatus", () => {
@@ -51,5 +51,66 @@ describe("StreakStatus", () => {
     await user.click(screen.getByRole("button", { name: "Play Timed mode" }));
 
     expect(onPlayTimed).toHaveBeenCalled();
+  });
+
+  describe("sharing today's result", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("hands off to the OS share sheet when the Web Share API is available", async () => {
+      const user = userEvent.setup();
+      const share = vi.fn().mockResolvedValue(undefined);
+      vi.stubGlobal("navigator", { ...navigator, share });
+
+      render(
+        <StreakStatus
+          currentStreak={5}
+          longestStreak={9}
+          result={{ date: "2026-07-07", timeTakenSeconds: 65, mistakeCount: 2 }}
+          onPlayTimed={() => {}}
+        />,
+      );
+
+      await user.click(screen.getByRole("button", { name: "Share" }));
+
+      expect(share).toHaveBeenCalledWith({
+        text: expect.stringContaining("1:05"),
+      });
+      expect(share).toHaveBeenCalledWith({
+        text: expect.stringContaining("2 mistakes"),
+      });
+      expect(share.mock.calls[0][0].text).not.toMatch(/day/i);
+    });
+
+    it("copies the result text to the clipboard when the Web Share API is unavailable", async () => {
+      const user = userEvent.setup();
+      // userEvent.setup() installs its own clipboard stub on navigator, so it
+      // must run before vi.stubGlobal or it clobbers the override below.
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      vi.stubGlobal("navigator", { ...navigator, share: undefined, clipboard: { writeText } });
+
+      render(
+        <StreakStatus
+          currentStreak={5}
+          longestStreak={9}
+          result={{ date: "2026-07-07", timeTakenSeconds: 65, mistakeCount: 2 }}
+          onPlayTimed={() => {}}
+        />,
+      );
+
+      await user.click(screen.getByRole("button", { name: "Share" }));
+
+      expect(writeText).toHaveBeenCalledWith(expect.stringContaining("1:05"));
+      expect(await screen.findByText(/copied/i)).toBeInTheDocument();
+    });
+
+    it("does not show a Share button when there is no result to share", () => {
+      render(
+        <StreakStatus currentStreak={1} longestStreak={1} result={null} onPlayTimed={() => {}} />,
+      );
+
+      expect(screen.queryByRole("button", { name: "Share" })).not.toBeInTheDocument();
+    });
   });
 });

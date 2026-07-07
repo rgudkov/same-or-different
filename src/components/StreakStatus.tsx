@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { StreakResult } from "../lib/streak";
 
 // Formats seconds as m:ss (e.g. 65 → "1:05").
@@ -7,10 +8,42 @@ function formatTime(totalSeconds: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+// Text handed to the OS share sheet / clipboard. Deliberately omits any
+// day-number/epoch framing (per ADR 0003 and the PRD).
+function shareText(result: StreakResult): string {
+  const mistakeWord = result.mistakeCount === 1 ? "mistake" : "mistakes";
+  return `Same or Different — ${formatTime(result.timeTakenSeconds)}, ${result.mistakeCount} ${mistakeWord}`;
+}
+
+// Hands off to the OS share sheet (ADR 0003: one Web Share API call rather
+// than bespoke per-platform buttons), falling back to a clipboard copy on
+// browsers without Web Share API support.
+function ShareButton({ result }: { result: StreakResult }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleShare() {
+    const text = shareText(result);
+    if (navigator.share) {
+      await navigator.share({ text });
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+  }
+
+  return (
+    <>
+      <button type="button" className="btn btn--link" onClick={handleShare}>
+        Share
+      </button>
+      {copied && <span className="share-copied">Copied to clipboard</span>}
+    </>
+  );
+}
+
 // The screen shown when today's Daily is already complete: current/longest
 // streak, a recap of today's result, and why the puzzle can't be replayed.
-// Reappears on any later same-day launch. A Share action lands separately
-// (#3, blocked on this screen existing).
+// Reappears on any later same-day launch.
 export function StreakStatus({
   currentStreak,
   longestStreak,
@@ -46,6 +79,7 @@ export function StreakStatus({
       </p>
 
       <div className="actions">
+        {result && <ShareButton result={result} />}
         <button type="button" className="btn btn--link" onClick={onPlayTimed}>
           Play Timed mode
         </button>
